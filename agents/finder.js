@@ -51,19 +51,36 @@ For each grant found:
 
 ═══ ORG-SPECIFIC RESEARCH RULES ═══
 
-For Holigenix Healthcare:
-- Search for: pediatric home health grants, faith-based nonprofit funding, HRSA MCHB, SDVOSB federal set-asides, Georgia DCH GAPP support, health IT grants (ONC/SBIR/STTR), nursing workforce development
+For Holigenix Healthcare (Georgia):
+- Search for: pediatric home health grants, faith-based nonprofit funding, HRSA MCHB, SDVOSB/VOSB federal set-asides, Georgia DCH GAPP support, health IT grants (ONC/SBIR/STTR), nursing workforce development
 - Lead with 508(c)(1)(a) status for foundation grants
-- Lead with SDVOSB for federal grants
+- Lead with SDVOSB for federal grants (SBA certified, valid through 02/18/2028)
+- Lead with GAPP approval as state credibility anchor
+- Feature CarePortal technology as health IT innovation differentiator
 - NEVER include patient names or PHI in any output
 - Do NOT reference NEMT division or Sunrise Pediatric
+- Georgia-specific sources to prioritize:
+  HRSA (pediatric health), CMS Innovation Center (home-based care), Georgia DCH (GAPP support),
+  SAMHSA (Medicaid waiver expansion), ONC (health IT/EHR), SBIR/STTR (CarePortal SaaS),
+  VA/DVA grants (SDVOSB set-asides), Community Foundation for Greater Atlanta,
+  Healthcare Georgia Foundation, Children's Healthcare of Atlanta Foundation,
+  Marcus Foundation, Robert Wood Johnson Foundation, Nemours Foundation,
+  Lucile Packard Foundation, USDA Distance Learning & Telemedicine,
+  Georgia SBDC (technology adoption), United Way of Greater Atlanta,
+  Kaiser Permanente Community Benefit, Blank Family Foundation
 
-For K1 Management:
+For K1 Management (PA/NJ/DE/Philadelphia):
 - Search for: MBE/MWBE capacity building, PHFA Healthy Homes, MBDA Business Center, HUD Section 3, NJEDA grants, COSTARS-aligned programs, Delaware OSD supplier development
 - Lead with COSTARS approval (March 2026) for PA grants
 - Lead with Delaware OSD/SBF certs for DE grants
 - Reference all certifications — they are the competitive moat
 - Philadelphia metro is the geographic anchor
+- Region-specific sources to prioritize:
+  PA: DCED, COSTARS, PHFA Healthy Homes, DCED Minority Business Development, PA SBDC, Reinvestment Fund Philadelphia, CDFIs
+  NJ: NJEDA, NJBAC, NJ Dept of State, NJ Housing Mortgage Finance Agency, Investors Foundation, TD Bank CDFI
+  DE: Delaware Division of Small Business, DEDO, Delaware Community Foundation, Longwood Foundation, Welfare Foundation, Delaware OSD
+  Philadelphia: PIDC, William Penn Foundation, Pew Charitable Trusts, Philadelphia Foundation, Samuel S. Fels Fund, PCED
+  Federal: SBA 8(a) prep, SBA Community Advantage, HUD Section 3, MBDA Business Center, DOT DBE, EPA Environmental Justice, EDA grants
 
 For Owner Nonprofit:
 - Search for: Georgia nonprofit grants, community development, education, social services
