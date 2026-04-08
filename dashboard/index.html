@@ -342,8 +342,35 @@ async function runSearch(){
   try{await fetch(`${API}/api/run`,{method:'POST',headers:{'Content-Type':'application/json'}});alert('🔍 Grant search started! Results will appear in 2-3 minutes.');}catch(e){alert('Error: '+e.message)}
 }
 
-function applyGrant(grantName,orgId){
-  alert('🚀 To apply, send this to the Telegram bot:\n\n/apply '+grantName+'\n\nThe Applicator agent will check docs, generate narrative + budget, and package the full application.');
+async function applyGrant(grantName,orgId){
+  if(!confirm(`🚀 Apply for "${grantName}"?\n\nThe Applicator agent will:\n1. Check document vault readiness\n2. Generate tailored narrative\n3. Create detailed budget\n4. Fill SF-424 data\n5. Package the full application\n\nThis takes 2-3 minutes.`))return;
+  try{
+    const r=await fetch(`${API}/api/apply`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({grantName,orgId})});
+    const d=await r.json();
+    if(d.status==='started'){
+      showToast('🚀 Applicator started! Building application package for "'+grantName+'"...');
+      setTimeout(()=>showToast('⏳ Still working... narrative + budget + docs being assembled.'),30000);
+      setTimeout(()=>{showToast('📦 Check Application Packages page for results.');load();},120000);
+    }else{alert('Error: '+(d.error||'Unknown'));}
+  }catch(e){alert('Error: '+e.message);}
+}
+
+async function runSearch(){
+  const orgId=orgFilter==='all'?'holigenix_healthcare':orgFilter;
+  if(!confirm('Run a new grant search for '+orgName(orgId)+'?'))return;
+  try{
+    await fetch(`${API}/api/search`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orgId})});
+    showToast('🔍 Grant search started for '+orgName(orgId)+'! Results in 2-3 minutes.');
+    setTimeout(load,120000);
+  }catch(e){alert('Error: '+e.message);}
+}
+
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:12px 20px;font-size:13px;color:var(--text);box-shadow:var(--shadow);z-index:999;max-width:400px;transition:opacity .3s';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.style.opacity='0'},8000);
 }
 
 // ── NAV ──

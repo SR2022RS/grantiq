@@ -1313,8 +1313,55 @@ app.post('/api/run', async (req, res) => {
     return res.status(401).json({ error: 'Invalid secret' });
   }
   res.json({ status: 'started', message: 'Full agent cycle initiated' });
-  // Run async — don't block the response
   runFullAgentCycle().catch(e => console.error('API run error:', e.message));
+});
+
+// ── ONE-CLICK APPLY API ──
+app.post('/api/apply', async (req, res) => {
+  const { grantName, orgId } = req.body;
+  if (!grantName || !orgId) {
+    return res.status(400).json({ error: 'Missing grantName or orgId' });
+  }
+  const org = ORGS.find(o => o.id === orgId);
+  if (!org) return res.status(404).json({ error: 'Organization not found' });
+
+  res.json({ status: 'started', message: `Applicator started for "${grantName}"` });
+
+  // Run async
+  dispatchOneClickApply({
+    orgId: org.id, orgName: org.name, grantName,
+    uei: org.uei, cage: org.cage, npi: org.npi,
+    certifications: JSON.stringify(org.certifications),
+  }).then(result => {
+    console.log(`[APPLICATOR] Package ready: ${grantName} for ${org.name}`);
+    if (ownerChatId) {
+      bot.sendMessage(ownerChatId, `🚀 Application package ready!\n\nGrant: ${grantName}\nOrg: ${org.name}\n\n${result.result?.substring(0, 500) || 'Package created.'}`, { parse_mode: 'Markdown' }).catch(() => {});
+    }
+  }).catch(e => console.error('[APPLICATOR] Error:', e.message));
+});
+
+// ── BUDGET GENERATION API ──
+app.post('/api/budget', async (req, res) => {
+  const { grantName, orgId, amount } = req.body;
+  if (!orgId) return res.status(400).json({ error: 'Missing orgId' });
+  const org = ORGS.find(o => o.id === orgId);
+  if (!org) return res.status(404).json({ error: 'Organization not found' });
+
+  res.json({ status: 'started', message: `Budget generation started for "${grantName || 'general'}"` });
+  dispatchBudgetGeneration({ orgId: org.id, orgName: org.name, grantName: grantName || 'General grant', grantAmount: amount || '$50,000 - $250,000' })
+    .catch(e => console.error('[BUDGETGEN] Error:', e.message));
+});
+
+// ── GRANT SEARCH API ──
+app.post('/api/search', async (req, res) => {
+  const { orgId } = req.body;
+  const org = ORGS.find(o => o.id === (orgId || 'holigenix_healthcare')) || ORGS[0];
+  res.json({ status: 'started', message: `Grant search started for ${org.name}` });
+  dispatchGrantSearch({
+    orgId: org.id, orgName: org.name, orgType: org.orgType,
+    regions: org.regions, certifications: JSON.stringify(org.certifications),
+    grantPriorities: JSON.stringify(org.grantPriorities), naicsCodes: org.naicsCodes,
+  }).catch(e => console.error('[FINDER] Error:', e.message));
 });
 
 app.listen(PORT, () => {
