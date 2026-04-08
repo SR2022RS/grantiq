@@ -12,6 +12,9 @@ const { dispatchEligibilityAnalysis, quickEligibilityCheck } = require('./agents
 const { dispatchPipelineReview, dispatchDeadlineCheck, quickPipelineStatus } = require('./agents/tracker');
 const { dispatchMonitoringScan, dispatchStatusCheck, quickAlertSummary } = require('./agents/monitor');
 const { dispatchDailyReport, dispatchEmailReport, dispatchDriveUpload, quickStats } = require('./agents/reporter');
+const { dispatchVaultCheck, dispatchGrantReadiness, quickVaultStatus } = require('./agents/vault');
+const { dispatchBudgetGeneration, quickBudgetEstimate } = require('./agents/budgetgen');
+const { dispatchOneClickApply, dispatchPackageCheck, quickApplyCheck } = require('./agents/applicator');
 
 // ============================================
 // CONFIG
@@ -532,18 +535,28 @@ bot.onText(/\/start/, (msg) => {
   bot.sendMessage(msg.chat.id, `🏛️ GrantIQ is online.
 
 I'm your AI Grant Agency Director — Director.
-I command 6 specialist agents to find and win grants.
+I command 10 specialist agents to find, write, and WIN grants.
 
 ═══ ORGANIZATIONS ═══
 /org holigenix — Switch to Holigenix Healthcare
 /org k1 — Switch to K1 Management
 /org nonprofit — Switch to Owner Nonprofit
-/org all — View all orgs
 
 ═══ DISCOVERY (Finder) ═══
-/search — Full grant search for active org
+/search — Full grant search
 /youtube — YouTube grant video research
 /pulse — Quick grant pulse
+
+═══ ONE-CLICK APPLY (Applicator) ═══
+/apply [grant name] — Full auto-apply package
+/packages — View application packages
+/budget [grant] — Generate detailed budget
+/budgetquick [amount] — Quick budget estimate
+
+═══ DOCUMENT VAULT ═══
+/docs — Full document checklist
+/docstatus — Quick vault status
+/upload [doc_type] — Mark document as uploaded
 
 ═══ APPLICATIONS (Writer) ═══
 /write — Draft application narratives
@@ -561,12 +574,11 @@ I command 6 specialist agents to find and win grants.
 ═══ MONITORING (Monitor) ═══
 /monitor — Run monitoring scan
 /alerts — View active alerts
-/check — Check submitted application statuses
+/check — Check submitted statuses
 
 ═══ REPORTING (Reporter) ═══
 /report — Daily grant report
 /email — Send email report
-/drive — Upload to Google Drive
 /stats — Quick stats
 
 ═══ COMMAND ═══
@@ -576,7 +588,7 @@ I command 6 specialist agents to find and win grants.
 /tools — Connected integrations
 
 📋 Active org: ${getActiveOrg().name}
-I'll send daily briefings at 7:00am EST and deadline alerts every 6 hours.`);
+Daily briefings at 7am EST. Deadline alerts every 6 hours.`);
 });
 
 // ── ORG SWITCHING ──
@@ -828,6 +840,99 @@ bot.onText(/\/run/, async (msg) => {
   }
 });
 
+// ── VAULT (Document Management) ──
+bot.onText(/\/docs/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `📁 Vault checking documents for ${org.name}...`);
+  try {
+    const result = await dispatchVaultCheck({ orgId: org.id, orgName: org.name });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Vault check complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/docstatus/, async (msg) => {
+  const org = getActiveOrg();
+  const result = await quickVaultStatus(org.id);
+  bot.sendMessage(msg.chat.id, result.result || 'No vault data.');
+});
+
+bot.onText(/\/upload(?:\s+(.+))?/i, async (msg, match) => {
+  const org = getActiveOrg();
+  const docType = match?.[1]?.trim();
+  if (!docType) {
+    bot.sendMessage(msg.chat.id, `📁 To mark a document as uploaded, use:\n/upload <doc_type>\n\nExample: /upload irs_determination\n\nUse /docs to see all required documents and their types.`);
+    return;
+  }
+  // Mark document as uploaded in vault
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/document_vault?org_id=eq.${org.id}&doc_type=eq.${docType}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ status: 'uploaded', uploaded_at: new Date().toISOString() })
+    });
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      bot.sendMessage(msg.chat.id, `✅ Marked "${data[0].doc_name}" as uploaded for ${org.name}.`);
+    } else {
+      bot.sendMessage(msg.chat.id, `❌ Document type "${docType}" not found. Use /docs to see valid types.`);
+    }
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+// ── BUDGETGEN (Budget Generator) ──
+bot.onText(/\/budget(?:\s+(.+))?/i, async (msg, match) => {
+  const org = getActiveOrg();
+  const grantName = match?.[1]?.trim();
+  bot.sendMessage(msg.chat.id, `💰 BudgetGen creating budget for ${org.name}${grantName ? ` — "${grantName}"` : ''}...\nThis may take 1-2 minutes.`);
+  try {
+    const result = await dispatchBudgetGeneration({
+      orgId: org.id, orgName: org.name, grantName: grantName || 'General capacity building grant',
+      grantAmount: '$50,000 - $250,000',
+    });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Budget generated.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/budgetquick(?:\s+(.+))?/i, async (msg, match) => {
+  const org = getActiveOrg();
+  const amount = match?.[1]?.trim() || '$100,000';
+  const result = await quickBudgetEstimate(org.id, amount, 'workforce development and technology');
+  bot.sendMessage(msg.chat.id, result.result || 'No estimate.');
+});
+
+// ── APPLICATOR (One-Click Apply) ──
+bot.onText(/\/apply(?:\s+(.+))?/i, async (msg, match) => {
+  const org = getActiveOrg();
+  const grantName = match?.[1]?.trim();
+  if (!grantName) {
+    bot.sendMessage(msg.chat.id, `🚀 One-Click Apply — Usage:\n/apply <grant name>\n/apply HRSA Maternal Child Health\n\nI'll check your docs, generate narrative + budget, fill SF-424, and package the full application.`);
+    return;
+  }
+  bot.sendMessage(msg.chat.id, `🚀 ONE-CLICK APPLY: "${grantName}" for ${org.name}\n\n⏳ Applicator is:\n1. Analyzing grant requirements\n2. Checking document vault\n3. Generating tailored narrative\n4. Creating budget\n5. Filling SF-424 data\n6. Packaging application\n\nThis may take 3-5 minutes...`);
+  await updateAgentStatus('applicator', 'working', `Applying: ${grantName}`);
+  try {
+    const result = await dispatchOneClickApply({
+      orgId: org.id, orgName: org.name, grantName,
+      uei: org.uei, cage: org.cage, npi: org.npi,
+      certifications: JSON.stringify(org.certifications),
+    });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Application package ready.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+    await updateAgentStatus('applicator', 'idle', `Package ready: ${grantName}`);
+  } catch (e) {
+    bot.sendMessage(msg.chat.id, `❌ ${e.message}`);
+    await updateAgentStatus('applicator', 'error', e.message);
+  }
+});
+
+bot.onText(/\/packages/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `📦 Checking application packages for ${org.name}...`);
+  try {
+    const result = await dispatchPackageCheck({ orgId: org.id, orgName: org.name });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Package check complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
 // ── COMPOSIO TOOLS ──
 bot.onText(/\/tools/, async (msg) => {
   const { getComposio } = require('./tools/composio-tools');
@@ -888,17 +993,20 @@ ACTIVE ORGANIZATION: ${org.name} (${org.id})
 
 AGENTS YOU CAN DISPATCH:
 - "finder" — grant search, discovery, YouTube research, "find grants", "search for funding", "what grants are available"
-- "writer" — write application narratives, drafts, "write an application", "draft a proposal", "help me apply"
+- "applicator" — ONE-CLICK APPLY, "apply for this grant", "submit application", "auto-apply", "apply for HRSA"
+- "vault" — document vault, "what documents do I need", "check my docs", "what's missing", "upload status"
+- "budgetgen" — budget generation, "create a budget", "how much should I budget", "budget for this grant"
+- "writer" — write application narratives, drafts, "write an application", "draft a proposal"
 - "analyst" — eligibility analysis, match scoring, "am I eligible", "check eligibility", "score this grant"
 - "tracker" — pipeline review, deadline management, "what deadlines", "pipeline status", "track this grant"
-- "monitor" — monitoring scan, status checks, alerts, "any new grants", "check for updates", "what's changed"
-- "reporter" — reports, stats, email, drive upload, "send me a report", "what are my stats", "email the report"
+- "monitor" — monitoring scan, status checks, alerts, "any new grants", "check for updates"
+- "reporter" — reports, stats, email, "send me a report", "what are my stats"
 - "briefing" — full agency briefing, "what's going on", "morning brief", "status update"
 - "chat" — general conversation, grant strategy advice, anything that doesn't need an agent
 
 RESPOND WITH ONLY valid JSON:
 {
-  "intent": "finder|writer|analyst|tracker|monitor|reporter|briefing|chat",
+  "intent": "finder|applicator|vault|budgetgen|writer|analyst|tracker|monitor|reporter|briefing|chat",
   "confidence": 0.0-1.0,
   "orgOverride": "org_id or null (if user mentions a specific org)",
   "grantName": "specific grant name mentioned or null",
@@ -937,6 +1045,37 @@ RESPOND WITH ONLY valid JSON:
         });
         bot.sendMessage(msg.chat.id, result.result || '✅ Search complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
         await updateAgentStatus('finder', 'idle', 'Research delivered');
+        break;
+      }
+
+      case 'applicator': {
+        const applyGrant = action.grantName || userMessage.replace(/apply|for|to|the/gi, '').trim();
+        bot.sendMessage(msg.chat.id, `🚀 ONE-CLICK APPLY: "${applyGrant}" for ${activeOrg.name}\n\n⏳ Analyzing requirements, checking docs, generating narrative + budget, packaging...`);
+        await updateAgentStatus('applicator', 'working', `Applying: ${applyGrant}`);
+        const result = await dispatchOneClickApply({
+          orgId: activeOrg.id, orgName: activeOrg.name, grantName: applyGrant,
+          uei: activeOrg.uei, cage: activeOrg.cage, npi: activeOrg.npi,
+          certifications: JSON.stringify(activeOrg.certifications),
+        });
+        bot.sendMessage(msg.chat.id, result.result || '✅ Application package ready.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+        await updateAgentStatus('applicator', 'idle', 'Package ready');
+        break;
+      }
+
+      case 'vault': {
+        bot.sendMessage(msg.chat.id, `📁 Checking document vault for ${activeOrg.name}...`);
+        const result = await dispatchVaultCheck({ orgId: activeOrg.id, orgName: activeOrg.name });
+        bot.sendMessage(msg.chat.id, result.result || '✅ Vault check complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+        break;
+      }
+
+      case 'budgetgen': {
+        const budgetGrant = action.grantName || 'capacity building grant';
+        bot.sendMessage(msg.chat.id, `💰 Generating budget for ${activeOrg.name}...`);
+        const result = await dispatchBudgetGeneration({
+          orgId: activeOrg.id, orgName: activeOrg.name, grantName: budgetGrant,
+        });
+        bot.sendMessage(msg.chat.id, result.result || '✅ Budget generated.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
         break;
       }
 

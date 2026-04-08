@@ -146,13 +146,16 @@ const TOOL_DEFINITIONS = {
 
 // ── AGENT → TOOL MAPPING ──
 const AGENT_TOOLS = {
-  director:  ['query_database', 'send_email', 'web_search'],
-  finder:    ['web_search', 'fetch_webpage', 'query_database', 'youtube_search', 'youtube_transcript'],
-  writer:    ['query_database', 'web_search'],
-  analyst:   ['query_database', 'web_search', 'fetch_webpage'],
-  tracker:   ['query_database'],
-  monitor:   ['query_database', 'web_search'],
-  reporter:  ['query_database', 'send_email', 'draft_email', 'upload_to_drive'],
+  director:    ['query_database', 'send_email', 'web_search'],
+  finder:      ['web_search', 'fetch_webpage', 'query_database', 'youtube_search', 'youtube_transcript'],
+  writer:      ['query_database', 'web_search'],
+  analyst:     ['query_database', 'web_search', 'fetch_webpage'],
+  tracker:     ['query_database'],
+  monitor:     ['query_database', 'web_search'],
+  reporter:    ['query_database', 'send_email', 'draft_email', 'upload_to_drive'],
+  vault:       ['query_database', 'upload_to_drive'],
+  budgetgen:   ['query_database', 'web_search'],
+  applicator:  ['query_database', 'web_search', 'fetch_webpage', 'send_email', 'draft_email', 'upload_to_drive'],
 };
 
 function getToolsForAgent(agentName) {

@@ -4,7 +4,7 @@
 
 GrantIQ follows the **AdWhisperer pattern**: flat Node.js project with `index.js` as the entry point, `agents/` for sub-agents, and `tools/` for shared infrastructure.
 
-**7 Agents:**
+**10 Agents:**
 - **Director** (in index.js) — Orchestrator, Telegram bot, intent routing, cron scheduling
 - **Finder** — Grant discovery via Perplexity web search, YouTube Data API, webpage fetching
 - **Writer** — Application narrative drafting (uses Claude Sonnet for quality)
@@ -12,15 +12,18 @@ GrantIQ follows the **AdWhisperer pattern**: flat Node.js project with `index.js
 - **Tracker** — Deadline tracking, pipeline management, status transitions
 - **Monitor** — Grant monitoring, new opportunity alerts, status checks
 - **Reporter** — Email reports (Nodemailer/Composio), Google Drive uploads, dashboard data
+- **Vault** — Document management, readiness checks, missing doc alerts
+- **BudgetGen** — Auto-generate line-item budgets from org billing rates
+- **Applicator** — ONE-CLICK APPLY: parse requirements, check docs, generate narrative + budget, fill SF-424, package application
 
 **Tools layer:**
-- `tools/llm.js` — Multi-provider: Anthropic direct + OpenRouter fallback
+- `tools/llm.js` — Multi-provider: OpenRouter (primary) + Anthropic direct fallback
 - `tools/agent-loop.js` — Agentic tool-use loop (max 15 iterations)
 - `tools/composio-tools.js` — 7 tools: web_search, fetch_webpage, query_database, youtube_search, youtube_transcript, upload_to_drive, send_email/draft_email
 
 ## Organizations Served
 
-1. **Holigenix Healthcare LLC** — 508(c)(1)(a) Faith-Based Nonprofit, Pediatric Home Health, Georgia
+1. **Holigenix Healthcare LLC** — 508(c)(1)(a) Faith-Based Nonprofit, Pediatric Home Health, Georgia (UEI: NNR7S596R4K9, CAGE: 9XZJ9, NPI: 1770341067)
 2. **K1 Management LLC** — MBE/MWBE Government Contractor, PA/NJ/DE
 3. **Owner Nonprofit** — Georgia (env-var configured)
 
@@ -47,8 +50,8 @@ GrantIQ follows the **AdWhisperer pattern**: flat Node.js project with `index.js
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| Director, Writer | `anthropic/claude-sonnet-4-20250514` | Premium — orchestration, grant writing |
-| Finder, Analyst, Tracker, Monitor | `openai/gpt-4o-mini` | Standard — research, analysis |
+| Director, Writer, Applicator | `anthropic/claude-sonnet-4-20250514` | Premium — orchestration, grant writing |
+| Finder, Analyst, Tracker, Monitor, Vault, BudgetGen | `openai/gpt-4o-mini` | Standard — research, analysis |
 | Reporter | `google/gemini-2.0-flash-001` | Budget — report formatting |
 
 ## Commands
@@ -67,7 +70,7 @@ See `.env.example` for full list. The bot loads `.env.local` first, then `.env` 
 
 ## Database
 
-Run `supabase-setup.sql` in Supabase SQL Editor. Tables: orgs, agents, grant_opportunities, application_drafts, grant_runs, youtube_intel, deadline_alerts, agent_activity_log.
+Run `supabase-setup.sql` in Supabase SQL Editor. Tables: orgs, agents, grant_opportunities, application_drafts, grant_runs, youtube_intel, deadline_alerts, agent_activity_log, document_vault, budget_templates, application_packages.
 
 ## Deployment
 
