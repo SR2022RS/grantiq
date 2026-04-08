@@ -1,0 +1,1178 @@
+require('dotenv').config({ path: '.env.local' });
+require('dotenv').config(); // also load .env if present
+
+const TelegramBot = require('node-telegram-bot-api');
+const cron = require('node-cron');
+const express = require('express');
+
+// ── SUB-AGENTS ──
+const { dispatchGrantSearch, dispatchYouTubeResearch, quickGrantPulse } = require('./agents/finder');
+const { dispatchApplicationDrafts, quickNarrativeIdeas } = require('./agents/writer');
+const { dispatchEligibilityAnalysis, quickEligibilityCheck } = require('./agents/analyst');
+const { dispatchPipelineReview, dispatchDeadlineCheck, quickPipelineStatus } = require('./agents/tracker');
+const { dispatchMonitoringScan, dispatchStatusCheck, quickAlertSummary } = require('./agents/monitor');
+const { dispatchDailyReport, dispatchEmailReport, dispatchDriveUpload, quickStats } = require('./agents/reporter');
+
+// ============================================
+// CONFIG
+// ============================================
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+const ANTHROPIC_KEY = process.env.ANTHROPIC_KEY || process.env.ANTHROPIC_API_KEY || '';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_KEY || '';
+const COMPOSIO_API_KEY = process.env.OPEN_CLAW_COMPOSIO || process.env.COMPOSIO_API_KEY || '';
+const RUN_SECRET = process.env.RUN_SECRET || '';
+
+// At least one LLM key is required (OpenRouter preferred, Anthropic as fallback)
+const HAS_LLM = OPENROUTER_API_KEY || ANTHROPIC_KEY;
+
+// ── ENV VALIDATION ──
+const required = { TELEGRAM_TOKEN };
+const requiredLLM = { 'OPENROUTER_API_KEY or ANTHROPIC_KEY': HAS_LLM };
+const optional = { SUPABASE_URL, SUPABASE_KEY, COMPOSIO_API_KEY, ANTHROPIC_KEY, OPENROUTER_API_KEY, PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY, YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY, GOOGLE_SERVICE_ACCOUNT: process.env.GOOGLE_SERVICE_ACCOUNT, EMAIL_USER: process.env.EMAIL_USER };
+
+console.log('\n🔍 Environment Check:');
+let missingRequired = false;
+for (const [key, val] of Object.entries(required)) {
+  if (!val) { console.error(`  ❌ ${key} — REQUIRED, not set`); missingRequired = true; }
+  else { console.log(`  ✅ ${key}`); }
+}
+for (const [key, val] of Object.entries(requiredLLM)) {
+  if (!val) { console.error(`  ❌ ${key} — REQUIRED, at least one LLM key needed`); missingRequired = true; }
+  else { console.log(`  ✅ LLM Provider: ${OPENROUTER_API_KEY ? 'OpenRouter (primary)' : 'Anthropic (direct)'}`); }
+}
+for (const [key, val] of Object.entries(optional)) {
+  console.log(`  ${val ? '✅' : '⚠️'} ${key}${val ? '' : ' — not set (optional)'}`);
+}
+if (missingRequired) {
+  console.error('\nFATAL: Missing required env vars. See above.\n');
+  process.exit(1);
+}
+console.log('');
+
+const OWNER_CHAT_ID = process.env.OWNER_CHAT_ID || null;
+let ownerChatId = OWNER_CHAT_ID;
+
+// ============================================
+// ORGANIZATION PROFILES
+// ============================================
+const ORGS = [
+  {
+    id: 'holigenix_healthcare',
+    name: 'Holigenix Healthcare LLC',
+    dba: 'Holigenix Healthcare — Home Health Care',
+    legalStructure: '508(c)(1)(a) Faith-Based Nonprofit Organization',
+    orgType: 'Pediatric Home Health Agency',
+    yearEstablished: '2024',
+    address: '56 Perimeter Center East, Suite 150, Atlanta, GA 30346',
+    county: 'Cobb County, Georgia',
+    phone: '(404) 831-7582',
+    email: 'admin@holigenixhealthcare.com',
+    npi: '1770341067',
+    uei: process.env.HOLIGENIX_UEI || 'NNR7S596R4K9',
+    cage: '9XZJ9',
+    clinicalDirector: 'Yinessa Davis-Cacapit, RN, BSN — Director of Nursing & Co-Founder',
+    operationsLead: 'Rodney Williams — Co-Founder, Operations & Strategy',
+    mission: 'To deliver compassionate, high-quality home healthcare services that empower medically complex individuals and their families — particularly children — to thrive safely within their homes and communities.',
+    vision: 'To be the most trusted and innovative home healthcare agency in Georgia — bridging clinical excellence, faith-based values, and technology-driven care coordination to create lasting health equity in underserved communities.',
+    medicaidProgram: 'Georgia Pediatric Program (GAPP) — Approved Provider',
+    primaryService: 'Private Duty Nursing (PDN)',
+    evvAggregator: 'HHAeXchange (Georgia state-mandated)',
+    claimsSystem: 'GAMMIS',
+    billingCodes: 'S9123 RN $95.36/hr | S9124 LPN $63.40/hr | S9122 PCA $25.52/hr',
+    population: 'Medically fragile pediatric patients (GAPP waiver); Veterans; Private pay expansion target',
+    communityNeed: 'Georgia ranks among top states for pediatric Medicaid enrollment. Cobb County and metro Atlanta face documented shortage of qualified home health providers accepting Medicaid pediatric cases. Disparities disproportionately affect Black and brown families in metro Atlanta.',
+    certifications: [
+      'Approved GAPP Medicaid Provider',
+      '508(c)(1)(a) Faith-Based Nonprofit (IRS determination letter available)',
+      'Georgia DCH Licensed Home Health Agency',
+      'Medicare certified',
+      'SAM.gov registered (active)',
+      'Veteran-Owned Small Business (VOSB) — SBA App ID 86261, submitted 04/08/2026, screening in progress (prior cert: 08/18/2024–02/18/2028)',
+      'Service-Disabled Veteran-Owned Small Business (SDVOSB) — SBA App ID 86261, submitted 04/08/2026, screening in progress (prior cert: 08/18/2024–02/18/2028)',
+      'WOSB — application in progress',
+      '100% EVV compliance via HHAeXchange',
+    ],
+    technology: 'CarePortal — proprietary EMR (React/TypeScript/Supabase/Tailwind/Claude AI/HoligeAI); OnboardBot — automated onboarding (Railway/Node.js); CareOps AI Agent — 24/7 monitoring; n8n automation; GoHighLevel CRM; GAMMIS EDI integration (in progress)',
+    activeClients: 5,
+    staff: '~8 (3 RNs, 1 LPN, 1 PCA, 2 Admin)',
+    targets: { activeClients: '20+', staff: '15+', evvCompliance: '100%', carePortal: 'Full production deployment', privatePayLaunch: 'Q3 2026' },
+    grantPriorities: [
+      'HRSA / MCHB Maternal & Child Health — pediatric health equity',
+      '508(c)(1)(a) Faith-Based funders — Robert Wood Johnson, United Way Atlanta, Community Foundation Greater Atlanta, Kaiser Permanente, Blank Family Foundation',
+      'SDVOSB federal set-asides',
+      'Georgia DCH GAPP Provider Capacity Support',
+      'CSBG Community Services Block Grant',
+      'ONC / SBIR / STTR Health IT — CarePortal SaaS',
+      'HCBS Waiver Development (CMS)',
+      'GCDD Georgia Council on Developmental Disabilities',
+      'WOSB programs (pipeline)',
+      'Nursing workforce development grants',
+    ],
+    rules: [
+      'NEVER include patient names or PHI',
+      'Do NOT reference NEMT division (not yet launched)',
+      'Do NOT reference Sunrise Pediatric demo environment',
+      'Use official mission statement verbatim',
+      'Lead with 508(c)(1)(a) for foundation grants',
+      'Lead with SDVOSB for federal grants',
+      'Enterprise healthcare brand voice — benchmark: Axxess, CharmHealth, Epic',
+    ],
+    naicsCodes: '621610, 621399, 621111',
+    regions: 'Georgia',
+    serviceArea: 'Cobb County (primary); Metro Atlanta; Statewide expansion target',
+    emailTo: process.env.HOLIGENIX_EMAIL_TO || 'admin@holigenixhealthcare.com',
+    driveFolderId: process.env.HOLIGENIX_DRIVE_FOLDER_ID,
+  },
+  {
+    id: 'k1_management',
+    name: 'K1 Management LLC',
+    entityAlt: 'Garden State Motions LLC (NJ entity)',
+    legalStructure: 'LLC — Minority-Owned Business',
+    orgType: 'Government Contracting / Construction / Facilities Management',
+    regions: 'Pennsylvania, New Jersey, Delaware, Philadelphia Metro',
+    serviceCounties: {
+      pa: ['Berks','Bucks','Chester','Cumberland','Dauphin','Delaware','Lancaster','Lehigh','Luzerne','Montgomery','York'],
+      nj: ['Atlantic','Burlington','Camden','Essex','Hudson','Mercer','Middlesex','Passaic','Somerset','Union'],
+      de: ['New Castle','Kent'],
+    },
+    mission: 'K1 Management LLC is a certified minority-owned general contracting firm specializing in residential rehabilitation, facilities maintenance, janitorial services, landscaping, and specialty trade construction. We serve government agencies and municipalities while creating economic opportunity by helping small and minority-owned contractors become certified, bonded, and contract-ready.',
+    services: [
+      'Residential rehabilitation (roofing, bathrooms, ramps, kitchens)',
+      'Janitorial and commercial cleaning',
+      'Landscaping and grounds maintenance',
+      'Drywall, flooring, interior finishes',
+      'Residential roofing',
+      'Graphic and signage installation',
+      'Government contractor development and certification consulting ($680 base + $500/cert)',
+    ],
+    certifications: [
+      'MBE — Pennsylvania State',
+      'SB — Pennsylvania',
+      'SDB (Small Disadvantaged Business) — Pennsylvania (Verified)',
+      'MWBE — New Jersey (Garden State Motions)',
+      'SBE — New Jersey (Garden State Motions)',
+      'HIC (Home Improvement Contractor) — Pennsylvania',
+      'GC (General Contractor) — Pennsylvania',
+      'COSTARS Approved Supplier — Pennsylvania (March 2026)',
+      'Delaware OSD Certificate (December 2025)',
+      'Delaware SBF Certificate (December 2025)',
+      'SAM.gov registered — active (both entities)',
+      'DBE — application in progress',
+    ],
+    bonding: '$500,000 (CNA) | General Liability active (Spinnaker + CNA)',
+    naicsCodes: '236118, 236116, 238130, 238160, 238310, 238330, 561720, 561730, 323113, 399300',
+    pastPerformance: [
+      'Chester Upland School District — janitorial services 7+ schools Summer 2025 (reference letter on file)',
+      'Graphic/signage installation — commercial December 2025 (50+ photos)',
+      'Residential construction — Bateman project 2024',
+    ],
+    employees: 'Owner-operated with 30+ active subcontractors',
+    grantPurpose: 'Scale government contract volume tri-state; AI-powered bid automation platform; contractor readiness consulting; bonding expansion beyond $500K; COSTARS outreach; Healthy Homes residential rehabilitation revenue',
+    grantPriorities: [
+      'MBE/MWBE capacity building (certs in hand — need capital)',
+      'PHFA Healthy Homes (PA residential rehab = core service)',
+      'MBDA Business Center grants (minority contractor development)',
+      'HUD Section 3 community development construction grants',
+      'NJEDA MBE capacity building',
+      'Small business AI/technology adoption grants',
+      'COSTARS-aligned capacity building (just approved March 2026)',
+      'Delaware OSD/SBF supplier development (just certified Dec 2025)',
+      'SBA Community Advantage / 8(a) prep',
+      'Contractor training and certification assistance',
+    ],
+    longTermGoals: 'WOSB federal certification, 8(a) application, national MWBE, AI bid platform launch',
+    emailTo: process.env.CLIENT_EMAIL_TO || 'tiffany@k1mlg.llc',
+    driveFolderId: process.env.CLIENT_DRIVE_FOLDER_ID,
+  },
+  {
+    id: 'owner_nonprofit',
+    name: process.env.OWNER_NONPROFIT_NAME || 'Owner Nonprofit',
+    legalStructure: 'Nonprofit',
+    orgType: 'Nonprofit Organization',
+    regions: 'Georgia',
+    mission: process.env.OWNER_NONPROFIT_MISSION || '',
+    grantPurpose: process.env.OWNER_NONPROFIT_PURPOSE || '',
+    certifications: [],
+    grantPriorities: [
+      'Georgia nonprofit grants',
+      'Community development',
+      'Education grants',
+      'Social services funding',
+    ],
+    naicsCodes: '',
+    emailTo: process.env.OWNER_EMAIL_TO || '',
+    driveFolderId: process.env.OWNER_DRIVE_FOLDER_ID,
+  },
+];
+
+// ============================================
+// SUPABASE HELPERS
+// ============================================
+async function supabaseGet(table, params = '') {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    return await res.json();
+  } catch (e) { console.error(`Supabase GET (${table}):`, e.message); return []; }
+}
+
+async function supabaseUpsert(table, data) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(data)
+    });
+  } catch (e) { console.error(`Supabase upsert (${table}):`, e.message); }
+}
+
+async function logActivity(agentId, action, detail, metadata = {}) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/agent_activity_log`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ agent_id: agentId, action, detail, metadata })
+    });
+  } catch (e) { console.error('logActivity error:', e.message); }
+}
+
+async function updateAgentStatus(agentId, status, summary) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return;
+  const now = new Date().toISOString();
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/agents?id=eq.${agentId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ status, last_run_at: now, last_result: { summary }, updated_at: now })
+    });
+  } catch (e) { console.error('updateAgentStatus error:', e.message); }
+}
+
+// ============================================
+// CLAUDE HELPER (for Director direct reasoning)
+// ============================================
+async function askClaude(systemPrompt, userPrompt) {
+  // Route through OpenRouter if available (primary), Anthropic as fallback
+  if (OPENROUTER_API_KEY) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://grantiq.app',
+          'X-Title': 'GrantIQ',
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-sonnet-4-20250514',
+          max_tokens: 4096,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        })
+      });
+      const data = await res.json();
+      if (data.error) return `API error: ${data.error.message || JSON.stringify(data.error)}`;
+      return data.choices?.[0]?.message?.content || '';
+    } catch (e) {
+      console.error('[OpenRouter] askClaude error, trying Anthropic fallback:', e.message);
+      // Fall through to Anthropic
+    }
+  }
+
+  // Anthropic direct fallback
+  if (ANTHROPIC_KEY) {
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 4096,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) return `API error: ${data.error.message || data.error.type}`;
+      return data.content?.map(c => c.text || '').join('') || '';
+    } catch (e) { return 'Error: ' + e.message; }
+  }
+
+  return 'Error: No LLM key configured. Set OPENROUTER_API_KEY or ANTHROPIC_KEY.';
+}
+
+// ============================================
+// DIRECTOR BRIEFING GENERATOR
+// ============================================
+async function generateBriefing(orgId) {
+  const org = ORGS.find(o => o.id === orgId) || ORGS[0];
+  const today = new Date().toISOString().split('T')[0];
+
+  const [grants, drafts, youtubeIntel, runs, agents] = await Promise.all([
+    supabaseGet('grant_opportunities', `org_id=eq.${orgId}&order=match_score.desc&limit=20`),
+    supabaseGet('application_drafts', `org_id=eq.${orgId}&order=created_at.desc&limit=10`),
+    supabaseGet('youtube_intel', `org_id=eq.${orgId}&order=created_at.desc&limit=5`),
+    supabaseGet('grant_runs', `org_id=eq.${orgId}&order=run_date.desc&limit=5`),
+    supabaseGet('agents', 'order=id'),
+  ]);
+
+  const newGrants = Array.isArray(grants) ? grants.filter(g => g.status === 'new') : [];
+  const activeGrants = Array.isArray(grants) ? grants.filter(g => !['expired', 'skipped', 'rejected'].includes(g.status)) : [];
+  const topGrants = Array.isArray(grants) ? grants.slice(0, 5) : [];
+
+  const directorSystem = `You are Director, the AI Grant Agency Director for GrantIQ. You command 6 sub-agents: Finder (discovery), Writer (applications), Analyst (eligibility), Tracker (deadlines), Monitor (alerts), Reporter (reports).
+
+You are STRATEGIC. Every briefing synthesizes data from all agents and delivers one decisive command brief. You don't just report — you DECIDE what matters and COMMAND what happens next.
+
+Output format for Telegram (use emojis, HIGH SIGNAL, max 30 lines):
+
+--- GRANT AGENCY COMMAND BRIEF ---
+
+📊 PIPELINE STATUS
+- Active grants, new discoveries, drafts in progress
+
+🔍 TOP OPPORTUNITIES (Finder)
+- Top 5 grants by match score with amounts and deadlines
+
+✍️ APPLICATION STATUS (Writer)
+- Drafts available, grants ready for application
+
+📋 ELIGIBILITY (Analyst)
+- High-match grants, certification advantages to leverage
+
+⏰ DEADLINES (Tracker)
+- Urgent deadlines, approaching deadlines
+
+📈 YOUTUBE INTEL (Finder)
+- Key insights from video research
+
+⚡ TODAY'S COMMANDS
+- 3 specific actions ranked by funding impact
+- Assign each to the right agent
+
+🤖 AGENT FLEET STATUS
+
+End with: "Reply: search | write | analyze | pipeline | monitor | report | brief [org]"
+
+IMPORTANT RULES:
+- NEVER include patient names or PHI (especially for Holigenix)
+- Do NOT reference NEMT division for Holigenix
+- Reference org-specific certifications when discussing competitive advantage
+- Every recommendation must be actionable with a specific next step`;
+
+  const directorPrompt = `Today: ${today}
+Organization: ${org.name} (${org.id})
+Type: ${org.orgType}
+Region: ${org.regions}
+
+CERTIFICATIONS:
+${JSON.stringify(org.certifications || [])}
+
+GRANT PRIORITIES:
+${JSON.stringify(org.grantPriorities || [])}
+
+GRANTS IN PIPELINE: ${Array.isArray(grants) ? grants.length : 0} total (${newGrants.length} new, ${activeGrants.length} active)
+TOP GRANTS:
+${JSON.stringify(topGrants.map(g => ({ name: g.name, funder: g.funder, amount: g.amount, deadline: g.deadline, score: g.match_score, status: g.status })))}
+
+APPLICATION DRAFTS: ${Array.isArray(drafts) ? drafts.length : 0} available
+YOUTUBE INTEL: ${Array.isArray(youtubeIntel) ? youtubeIntel.length : 0} videos analyzed
+RECENT RUNS: ${Array.isArray(runs) ? runs.length : 0}
+
+AGENT FLEET:
+${(Array.isArray(agents) ? agents : []).map(a => `${a.name}: ${a.status} | Last run: ${a.last_run_at || 'never'}`).join('\n')}
+
+COMPOSIO: ${COMPOSIO_API_KEY ? '✅ Connected' : '⚠️ Not configured'}
+
+Generate the command briefing. Be decisive. Assign specific actions.`;
+
+  return await askClaude(directorSystem, directorPrompt);
+}
+
+// ============================================
+// FULL AGENT RUN — All orgs, all modules
+// ============================================
+async function runFullAgentCycle() {
+  console.log('🚀 Starting full GrantIQ agent cycle...');
+  const results = {};
+
+  for (const org of ORGS) {
+    console.log(`\n[${org.id.toUpperCase()}] Starting grant research cycle...`);
+    try {
+      // Step 1: Finder — discover grants
+      console.log(`[${org.id}] Step 1: Finder searching for grants...`);
+      await updateAgentStatus('finder', 'working', `Searching: ${org.name}`);
+      const searchResult = await dispatchGrantSearch({
+        orgId: org.id,
+        orgName: org.name,
+        orgType: org.orgType,
+        regions: org.regions,
+        certifications: JSON.stringify(org.certifications),
+        grantPriorities: JSON.stringify(org.grantPriorities),
+        naicsCodes: org.naicsCodes,
+      });
+      await updateAgentStatus('finder', 'idle', `Found grants for ${org.name}`);
+
+      // Step 2: Analyst — score eligibility
+      console.log(`[${org.id}] Step 2: Analyst scoring eligibility...`);
+      await updateAgentStatus('analyst', 'working', `Analyzing: ${org.name}`);
+      await dispatchEligibilityAnalysis({
+        orgId: org.id,
+        orgName: org.name,
+        orgType: org.orgType,
+        legalStructure: org.legalStructure,
+        certifications: org.certifications,
+        regions: org.regions,
+        naicsCodes: org.naicsCodes,
+      });
+      await updateAgentStatus('analyst', 'idle', `Analysis complete for ${org.name}`);
+
+      // Step 3: Writer — draft applications
+      console.log(`[${org.id}] Step 3: Writer drafting applications...`);
+      await updateAgentStatus('writer', 'working', `Writing for: ${org.name}`);
+      await dispatchApplicationDrafts({
+        orgId: org.id,
+        orgName: org.name,
+        orgType: org.orgType,
+        mission: org.mission,
+        certifications: JSON.stringify(org.certifications),
+        pastPerformance: JSON.stringify(org.pastPerformance || []),
+        count: 5,
+      });
+      await updateAgentStatus('writer', 'idle', `Drafts complete for ${org.name}`);
+
+      // Step 4: Reporter — generate reports, send email, upload to Drive
+      console.log(`[${org.id}] Step 4: Reporter generating daily report...`);
+      await updateAgentStatus('reporter', 'working', `Reporting: ${org.name}`);
+      const reportResult = await dispatchDailyReport({
+        orgId: org.id,
+        orgName: org.name,
+        emailTo: org.emailTo,
+        driveFolderId: org.driveFolderId,
+        certifications: org.certifications,
+      });
+      await updateAgentStatus('reporter', 'idle', `Report delivered for ${org.name}`);
+
+      results[org.id] = { status: 'success', grants: searchResult?.actions?.length || 0 };
+      console.log(`[${org.id.toUpperCase()}] ✅ Cycle complete`);
+
+    } catch (e) {
+      console.error(`[${org.id.toUpperCase()}] ❌ Error:`, e.message);
+      results[org.id] = { status: 'error', error: e.message };
+    }
+  }
+
+  // Step 5: Tracker — check all deadlines
+  console.log('\n[TRACKER] Checking deadlines across all orgs...');
+  await updateAgentStatus('tracker', 'working', 'Deadline check');
+  await dispatchDeadlineCheck({});
+  await updateAgentStatus('tracker', 'idle', 'Deadline check complete');
+
+  await logActivity('director', 'full_cycle', 'Full agent cycle completed', results);
+  console.log('\n✅ Full GrantIQ agent cycle complete.');
+  return results;
+}
+
+// ============================================
+// TELEGRAM BOT
+// ============================================
+const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+
+let activeOrgId = 'holigenix_healthcare'; // Default org
+
+function getActiveOrg() {
+  return ORGS.find(o => o.id === activeOrgId) || ORGS[0];
+}
+
+bot.onText(/\/start/, (msg) => {
+  ownerChatId = msg.chat.id;
+  bot.sendMessage(msg.chat.id, `🏛️ GrantIQ is online.
+
+I'm your AI Grant Agency Director — Director.
+I command 6 specialist agents to find and win grants.
+
+═══ ORGANIZATIONS ═══
+/org holigenix — Switch to Holigenix Healthcare
+/org k1 — Switch to K1 Management
+/org nonprofit — Switch to Owner Nonprofit
+/org all — View all orgs
+
+═══ DISCOVERY (Finder) ═══
+/search — Full grant search for active org
+/youtube — YouTube grant video research
+/pulse — Quick grant pulse
+
+═══ APPLICATIONS (Writer) ═══
+/write — Draft application narratives
+/ideas [grant] — Quick narrative angle ideas
+
+═══ ELIGIBILITY (Analyst) ═══
+/analyze — Run eligibility analysis
+/eligible [grant] — Quick eligibility check
+
+═══ PIPELINE (Tracker) ═══
+/pipeline — Full pipeline review
+/deadlines — Check upcoming deadlines
+/status — Quick pipeline status
+
+═══ MONITORING (Monitor) ═══
+/monitor — Run monitoring scan
+/alerts — View active alerts
+/check — Check submitted application statuses
+
+═══ REPORTING (Reporter) ═══
+/report — Daily grant report
+/email — Send email report
+/drive — Upload to Google Drive
+/stats — Quick stats
+
+═══ COMMAND ═══
+/briefing — Full agency command brief
+/run — Run full agent cycle (all orgs)
+/fleet — Agent fleet status
+/tools — Connected integrations
+
+📋 Active org: ${getActiveOrg().name}
+I'll send daily briefings at 7:00am EST and deadline alerts every 6 hours.`);
+});
+
+// ── ORG SWITCHING ──
+bot.onText(/\/org(?:\s+(.+))?/i, async (msg, match) => {
+  const target = match?.[1]?.trim()?.toLowerCase();
+  if (!target || target === 'all') {
+    let text = '🏛️ Organizations:\n\n';
+    for (const org of ORGS) {
+      const active = org.id === activeOrgId ? ' ← ACTIVE' : '';
+      text += `• ${org.name}${active}\n  ID: ${org.id}\n  Type: ${org.orgType}\n  Certs: ${(org.certifications || []).length}\n\n`;
+    }
+    text += 'Switch: /org holigenix | /org k1 | /org nonprofit';
+    bot.sendMessage(msg.chat.id, text);
+    return;
+  }
+
+  const orgMap = { holigenix: 'holigenix_healthcare', k1: 'k1_management', nonprofit: 'owner_nonprofit' };
+  const newOrgId = orgMap[target] || ORGS.find(o => o.id.includes(target) || o.name.toLowerCase().includes(target))?.id;
+
+  if (newOrgId) {
+    activeOrgId = newOrgId;
+    const org = getActiveOrg();
+    bot.sendMessage(msg.chat.id, `✅ Switched to: ${org.name}\nType: ${org.orgType}\nRegion: ${org.regions || 'N/A'}\nCertifications: ${(org.certifications || []).length}`);
+  } else {
+    bot.sendMessage(msg.chat.id, '❌ Unknown org. Try: /org holigenix | /org k1 | /org nonprofit');
+  }
+});
+
+// ── BRIEFING ──
+bot.onText(/\/briefing/, async (msg) => {
+  ownerChatId = msg.chat.id;
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `⏳ Director is analyzing ${org.name}...`);
+  await updateAgentStatus('director', 'working', 'Generating briefing');
+  const briefing = await generateBriefing(org.id);
+  bot.sendMessage(msg.chat.id, briefing, { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, briefing));
+  await updateAgentStatus('director', 'idle', 'Briefing delivered');
+  await logActivity('director', 'briefing', `Briefing generated for ${org.name}`);
+});
+
+bot.onText(/\/fleet/, async (msg) => {
+  const agents = await supabaseGet('agents', 'order=id');
+  let text = '🤖 Agent Fleet Status\n\n';
+  const agentNames = { finder: '🔍 Finder', writer: '✍️ Writer', analyst: '📋 Analyst', tracker: '⏰ Tracker', monitor: '👁️ Monitor', reporter: '📊 Reporter' };
+  for (const a of (Array.isArray(agents) ? agents : [])) {
+    const icon = a.status === 'working' ? '🔄' : a.status === 'error' ? '🔴' : a.status === 'disabled' ? '⚫' : '🟢';
+    const label = agentNames[a.name] || `🤖 ${a.name}`;
+    text += `${icon} ${label}\n   ${a.status} | Last: ${a.last_run_at ? new Date(a.last_run_at).toLocaleString() : 'never'}\n\n`;
+  }
+  bot.sendMessage(msg.chat.id, text);
+});
+
+// ── FINDER ──
+bot.onText(/\/search/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `🔍 Finder is searching for grants for ${org.name}...\nThis may take 2-3 minutes.`);
+  await updateAgentStatus('finder', 'working', `Searching: ${org.name}`);
+  try {
+    const result = await dispatchGrantSearch({
+      orgId: org.id, orgName: org.name, orgType: org.orgType,
+      regions: org.regions, certifications: JSON.stringify(org.certifications),
+      grantPriorities: JSON.stringify(org.grantPriorities), naicsCodes: org.naicsCodes,
+    });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Grant search complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+    await updateAgentStatus('finder', 'idle', `Search complete: ${org.name}`);
+  } catch (e) {
+    bot.sendMessage(msg.chat.id, `❌ Finder error: ${e.message}`);
+    await updateAgentStatus('finder', 'error', e.message);
+  }
+});
+
+bot.onText(/\/youtube/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `📺 Finder is searching YouTube for ${org.name} grants...`);
+  await updateAgentStatus('finder', 'working', `YouTube research: ${org.name}`);
+  try {
+    const result = await dispatchYouTubeResearch({
+      orgId: org.id, orgName: org.name, orgType: org.orgType, regions: org.regions,
+    });
+    bot.sendMessage(msg.chat.id, result.result || '✅ YouTube research complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+    await updateAgentStatus('finder', 'idle', 'YouTube research complete');
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/pulse/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `📡 Quick grant pulse for ${org.name}...`);
+  const result = await quickGrantPulse(org.id, org.orgType, org.regions);
+  bot.sendMessage(msg.chat.id, result.result || 'No pulse data.');
+});
+
+// ── WRITER ──
+bot.onText(/\/write/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `✍️ Writer is drafting applications for ${org.name}...\nThis may take 2-3 minutes.`);
+  await updateAgentStatus('writer', 'working', `Writing for: ${org.name}`);
+  try {
+    const result = await dispatchApplicationDrafts({
+      orgId: org.id, orgName: org.name, orgType: org.orgType,
+      mission: org.mission, certifications: JSON.stringify(org.certifications),
+      pastPerformance: JSON.stringify(org.pastPerformance || []), count: 5,
+    });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Application drafts generated.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+    await updateAgentStatus('writer', 'idle', `Drafts complete: ${org.name}`);
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/ideas(?:\s+(.+))?/i, async (msg, match) => {
+  const org = getActiveOrg();
+  const grantName = match?.[1]?.trim() || 'general grant';
+  bot.sendMessage(msg.chat.id, `✍️ Writer brainstorming narrative ideas for "${grantName}"...`);
+  const result = await quickNarrativeIdeas(org.name, org.orgType, grantName);
+  bot.sendMessage(msg.chat.id, result.result || 'No ideas generated.');
+});
+
+// ── ANALYST ──
+bot.onText(/\/analyze/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `📋 Analyst is evaluating eligibility for ${org.name}...`);
+  await updateAgentStatus('analyst', 'working', `Analyzing: ${org.name}`);
+  try {
+    const result = await dispatchEligibilityAnalysis({
+      orgId: org.id, orgName: org.name, orgType: org.orgType,
+      legalStructure: org.legalStructure, certifications: org.certifications,
+      regions: org.regions, naicsCodes: org.naicsCodes,
+    });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Eligibility analysis complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+    await updateAgentStatus('analyst', 'idle', `Analysis complete: ${org.name}`);
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/eligible(?:\s+(.+))?/i, async (msg, match) => {
+  const org = getActiveOrg();
+  const grantName = match?.[1]?.trim() || 'general grant';
+  bot.sendMessage(msg.chat.id, `📋 Quick eligibility check for "${grantName}"...`);
+  const result = await quickEligibilityCheck(org.name, org.orgType, (org.certifications || []).join(', '), grantName);
+  bot.sendMessage(msg.chat.id, result.result || 'No result.');
+});
+
+// ── TRACKER ──
+bot.onText(/\/pipeline/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `⏰ Tracker reviewing pipeline for ${org.name}...`);
+  await updateAgentStatus('tracker', 'working', `Pipeline review: ${org.name}`);
+  try {
+    const result = await dispatchPipelineReview({ orgId: org.id, orgName: org.name });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Pipeline review complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+    await updateAgentStatus('tracker', 'idle', 'Pipeline review complete');
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/deadlines/, async (msg) => {
+  bot.sendMessage(msg.chat.id, '⏰ Tracker checking deadlines across all orgs...');
+  try {
+    const result = await dispatchDeadlineCheck({});
+    bot.sendMessage(msg.chat.id, result.result || '✅ Deadline check complete.');
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/status/, async (msg) => {
+  const org = getActiveOrg();
+  const result = await quickPipelineStatus(org.id);
+  bot.sendMessage(msg.chat.id, result.result || 'No pipeline data.');
+});
+
+// ── MONITOR ──
+bot.onText(/\/monitor/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `👁️ Monitor scanning for ${org.name}...`);
+  await updateAgentStatus('monitor', 'working', `Monitoring: ${org.name}`);
+  try {
+    const result = await dispatchMonitoringScan({
+      orgId: org.id, orgName: org.name, orgType: org.orgType,
+      regions: org.regions, grantPriorities: JSON.stringify(org.grantPriorities),
+    });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Monitoring scan complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+    await updateAgentStatus('monitor', 'idle', `Monitoring complete: ${org.name}`);
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/alerts/, async (msg) => {
+  const result = await quickAlertSummary();
+  bot.sendMessage(msg.chat.id, result.result || 'No active alerts.');
+});
+
+bot.onText(/\/check/, async (msg) => {
+  bot.sendMessage(msg.chat.id, '👁️ Monitor checking submitted application statuses...');
+  try {
+    const result = await dispatchStatusCheck({});
+    bot.sendMessage(msg.chat.id, result.result || '✅ Status check complete.');
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+// ── REPORTER ──
+bot.onText(/\/report/, async (msg) => {
+  const org = getActiveOrg();
+  bot.sendMessage(msg.chat.id, `📊 Reporter generating report for ${org.name}...`);
+  await updateAgentStatus('reporter', 'working', `Reporting: ${org.name}`);
+  try {
+    const result = await dispatchDailyReport({
+      orgId: org.id, orgName: org.name, emailTo: org.emailTo,
+      driveFolderId: org.driveFolderId, certifications: org.certifications,
+    });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Report generated.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+    await updateAgentStatus('reporter', 'idle', `Report delivered: ${org.name}`);
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/email/, async (msg) => {
+  const org = getActiveOrg();
+  if (!org.emailTo) { bot.sendMessage(msg.chat.id, `❌ No email configured for ${org.name}.`); return; }
+  bot.sendMessage(msg.chat.id, `📧 Reporter sending email report to ${org.emailTo}...`);
+  try {
+    const result = await dispatchEmailReport({ orgId: org.id, orgName: org.name, emailTo: org.emailTo });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Email sent.');
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/drive/, async (msg) => {
+  const org = getActiveOrg();
+  if (!org.driveFolderId) { bot.sendMessage(msg.chat.id, `❌ No Drive folder configured for ${org.name}.`); return; }
+  bot.sendMessage(msg.chat.id, `📁 Reporter uploading to Drive for ${org.name}...`);
+  try {
+    const result = await dispatchDriveUpload({ orgId: org.id, orgName: org.name, driveFolderId: org.driveFolderId });
+    bot.sendMessage(msg.chat.id, result.result || '✅ Drive upload complete.');
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+bot.onText(/\/stats/, async (msg) => {
+  const org = getActiveOrg();
+  const result = await quickStats(org.id);
+  bot.sendMessage(msg.chat.id, result.result || 'No stats available.');
+});
+
+// ── FULL RUN ──
+bot.onText(/\/run/, async (msg) => {
+  ownerChatId = msg.chat.id;
+  bot.sendMessage(msg.chat.id, '🚀 Starting full GrantIQ agent cycle for ALL organizations...\nThis may take 10-15 minutes.');
+  try {
+    const results = await runFullAgentCycle();
+    let summary = '✅ Full agent cycle complete!\n\n';
+    for (const [orgId, result] of Object.entries(results)) {
+      const org = ORGS.find(o => o.id === orgId);
+      summary += `${result.status === 'success' ? '✅' : '❌'} ${org?.name || orgId}: ${result.status}\n`;
+    }
+    bot.sendMessage(msg.chat.id, summary);
+  } catch (e) {
+    bot.sendMessage(msg.chat.id, `❌ Full cycle error: ${e.message}`);
+  }
+});
+
+// ── COMPOSIO TOOLS ──
+bot.onText(/\/tools/, async (msg) => {
+  const { getComposio } = require('./tools/composio-tools');
+  const composio = getComposio();
+  let text = '🔧 Integrations:\n\n';
+  text += `✅ Claude (LLM)\n`;
+  text += `${process.env.OPENROUTER_API_KEY ? '✅' : '⚠️'} OpenRouter (multi-model)\n`;
+  text += `${process.env.PERPLEXITY_API_KEY ? '✅' : '⚠️'} Perplexity (web search)\n`;
+  text += `${process.env.YOUTUBE_API_KEY ? '✅' : '⚠️'} YouTube Data API\n`;
+  text += `${process.env.GOOGLE_SERVICE_ACCOUNT ? '✅' : '⚠️'} Google Drive\n`;
+  text += `${process.env.EMAIL_USER ? '✅' : '⚠️'} Gmail\n`;
+  text += `${composio ? '✅' : '⚠️'} Composio\n`;
+  text += `✅ Supabase\n`;
+
+  if (composio) {
+    try {
+      const connections = await composio.connectedAccounts.list({});
+      for (const conn of (connections.items || [])) {
+        text += `✅ ${conn.appName || conn.app?.name || 'Unknown'} (Composio)\n`;
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  text += `\nConnect more: /connect <app>`;
+  bot.sendMessage(msg.chat.id, text);
+});
+
+bot.onText(/\/connect (.+)/i, async (msg, match) => {
+  const { getComposio } = require('./tools/composio-tools');
+  const appName = match[1].trim().toLowerCase();
+  const composio = getComposio();
+  if (!composio) { bot.sendMessage(msg.chat.id, '❌ Set COMPOSIO_API_KEY first.'); return; }
+  bot.sendMessage(msg.chat.id, `🔗 Generating ${appName} connection...`);
+  try {
+    const entity = composio.getEntity('grantiq-bot');
+    const connection = await entity.initiateConnection({ appName });
+    bot.sendMessage(msg.chat.id, `✅ Click to connect ${appName}:\n\n${connection.redirectUrl}`);
+  } catch (e) { bot.sendMessage(msg.chat.id, `❌ ${e.message}`); }
+});
+
+// ── NATURAL LANGUAGE — Director understands everything ──
+bot.on('message', async (msg) => {
+  if (msg.text?.startsWith('/')) return;
+  if (!msg.text) return;
+
+  ownerChatId = msg.chat.id;
+  const org = getActiveOrg();
+  const userMessage = msg.text.trim();
+
+  bot.sendMessage(msg.chat.id, '🧠 Director is on it...');
+
+  const routerResponse = await askClaude(
+    `You are Director, the routing brain of GrantIQ — an AI grant research agency with 6 sub-agents.
+
+Your job: read the user's message, decide what they want, and return a JSON action.
+
+ACTIVE ORGANIZATION: ${org.name} (${org.id})
+
+AGENTS YOU CAN DISPATCH:
+- "finder" — grant search, discovery, YouTube research, "find grants", "search for funding", "what grants are available"
+- "writer" — write application narratives, drafts, "write an application", "draft a proposal", "help me apply"
+- "analyst" — eligibility analysis, match scoring, "am I eligible", "check eligibility", "score this grant"
+- "tracker" — pipeline review, deadline management, "what deadlines", "pipeline status", "track this grant"
+- "monitor" — monitoring scan, status checks, alerts, "any new grants", "check for updates", "what's changed"
+- "reporter" — reports, stats, email, drive upload, "send me a report", "what are my stats", "email the report"
+- "briefing" — full agency briefing, "what's going on", "morning brief", "status update"
+- "chat" — general conversation, grant strategy advice, anything that doesn't need an agent
+
+RESPOND WITH ONLY valid JSON:
+{
+  "intent": "finder|writer|analyst|tracker|monitor|reporter|briefing|chat",
+  "confidence": 0.0-1.0,
+  "orgOverride": "org_id or null (if user mentions a specific org)",
+  "grantName": "specific grant name mentioned or null",
+  "chatResponse": "If intent is chat, your helpful response here. Otherwise null."
+}`,
+    `User message: "${userMessage}"`
+  );
+
+  let action;
+  try {
+    const jsonStr = routerResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    action = JSON.parse(jsonStr);
+  } catch {
+    action = { intent: 'chat', chatResponse: routerResponse, confidence: 0.5 };
+  }
+
+  // Apply org override if specified
+  if (action.orgOverride) {
+    const orgMap = { holigenix: 'holigenix_healthcare', k1: 'k1_management', nonprofit: 'owner_nonprofit' };
+    const overrideId = orgMap[action.orgOverride] || action.orgOverride;
+    if (ORGS.find(o => o.id === overrideId)) activeOrgId = overrideId;
+  }
+
+  const activeOrg = getActiveOrg();
+  console.log(`[DIRECTOR] Intent: ${action.intent} (${action.confidence}) — "${userMessage.substring(0, 50)}" — Org: ${activeOrg.id}`);
+
+  try {
+    switch (action.intent) {
+      case 'finder': {
+        bot.sendMessage(msg.chat.id, `🔍 Dispatching Finder for ${activeOrg.name}...`);
+        await updateAgentStatus('finder', 'working', `Research: ${userMessage.substring(0, 50)}`);
+        const result = await dispatchGrantSearch({
+          orgId: activeOrg.id, orgName: activeOrg.name, orgType: activeOrg.orgType,
+          regions: activeOrg.regions, certifications: JSON.stringify(activeOrg.certifications),
+          grantPriorities: JSON.stringify(activeOrg.grantPriorities), naicsCodes: activeOrg.naicsCodes,
+        });
+        bot.sendMessage(msg.chat.id, result.result || '✅ Search complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+        await updateAgentStatus('finder', 'idle', 'Research delivered');
+        break;
+      }
+
+      case 'writer': {
+        bot.sendMessage(msg.chat.id, `✍️ Dispatching Writer for ${activeOrg.name}...`);
+        await updateAgentStatus('writer', 'working', `Writing: ${userMessage.substring(0, 50)}`);
+        const result = await dispatchApplicationDrafts({
+          orgId: activeOrg.id, orgName: activeOrg.name, orgType: activeOrg.orgType,
+          mission: activeOrg.mission, certifications: JSON.stringify(activeOrg.certifications),
+          pastPerformance: JSON.stringify(activeOrg.pastPerformance || []),
+          grantId: action.grantName, count: 5,
+        });
+        bot.sendMessage(msg.chat.id, result.result || '✅ Drafts generated.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+        await updateAgentStatus('writer', 'idle', 'Writing delivered');
+        break;
+      }
+
+      case 'analyst': {
+        bot.sendMessage(msg.chat.id, `📋 Dispatching Analyst for ${activeOrg.name}...`);
+        await updateAgentStatus('analyst', 'working', `Analyzing eligibility`);
+        const result = await dispatchEligibilityAnalysis({
+          orgId: activeOrg.id, orgName: activeOrg.name, orgType: activeOrg.orgType,
+          legalStructure: activeOrg.legalStructure, certifications: activeOrg.certifications,
+          regions: activeOrg.regions, naicsCodes: activeOrg.naicsCodes,
+        });
+        bot.sendMessage(msg.chat.id, result.result || '✅ Analysis complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+        await updateAgentStatus('analyst', 'idle', 'Analysis delivered');
+        break;
+      }
+
+      case 'tracker': {
+        bot.sendMessage(msg.chat.id, `⏰ Dispatching Tracker for ${activeOrg.name}...`);
+        await updateAgentStatus('tracker', 'working', `Pipeline review`);
+        const result = await dispatchPipelineReview({ orgId: activeOrg.id, orgName: activeOrg.name });
+        bot.sendMessage(msg.chat.id, result.result || '✅ Pipeline review complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+        await updateAgentStatus('tracker', 'idle', 'Pipeline delivered');
+        break;
+      }
+
+      case 'monitor': {
+        bot.sendMessage(msg.chat.id, `👁️ Dispatching Monitor for ${activeOrg.name}...`);
+        await updateAgentStatus('monitor', 'working', `Monitoring scan`);
+        const result = await dispatchMonitoringScan({
+          orgId: activeOrg.id, orgName: activeOrg.name, orgType: activeOrg.orgType,
+          regions: activeOrg.regions, grantPriorities: JSON.stringify(activeOrg.grantPriorities),
+        });
+        bot.sendMessage(msg.chat.id, result.result || '✅ Monitoring complete.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+        await updateAgentStatus('monitor', 'idle', 'Monitoring delivered');
+        break;
+      }
+
+      case 'reporter': {
+        bot.sendMessage(msg.chat.id, `📊 Dispatching Reporter for ${activeOrg.name}...`);
+        await updateAgentStatus('reporter', 'working', `Generating report`);
+        const result = await dispatchDailyReport({
+          orgId: activeOrg.id, orgName: activeOrg.name, emailTo: activeOrg.emailTo,
+          driveFolderId: activeOrg.driveFolderId, certifications: activeOrg.certifications,
+        });
+        bot.sendMessage(msg.chat.id, result.result || '✅ Report generated.', { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, result.result || 'Done'));
+        await updateAgentStatus('reporter', 'idle', 'Report delivered');
+        break;
+      }
+
+      case 'briefing': {
+        bot.sendMessage(msg.chat.id, `⏳ Director is analyzing ${activeOrg.name}...`);
+        await updateAgentStatus('director', 'working', 'Generating briefing');
+        const briefing = await generateBriefing(activeOrg.id);
+        bot.sendMessage(msg.chat.id, briefing, { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, briefing));
+        await updateAgentStatus('director', 'idle', 'Briefing delivered');
+        await logActivity('director', 'briefing', 'Briefing generated via natural language');
+        break;
+      }
+
+      case 'chat':
+      default: {
+        if (action.chatResponse && action.chatResponse.length > 10) {
+          bot.sendMessage(msg.chat.id, action.chatResponse);
+        } else {
+          const response = await askClaude(
+            `You are Director, the AI Grant Agency Director for GrantIQ. You run an agency with 6 agents: Finder (discovery), Writer (applications), Analyst (eligibility), Tracker (deadlines), Monitor (alerts), Reporter (reports). You specialize in grants for healthcare nonprofits, minority-owned businesses, and government contractors. Answer with expert grant strategy knowledge. Be concise and actionable. Max 20 lines.`,
+            `Org: ${activeOrg.name} (${activeOrg.orgType})\nUser: ${userMessage}`
+          );
+          bot.sendMessage(msg.chat.id, response, { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(msg.chat.id, response));
+        }
+        break;
+      }
+    }
+
+    await logActivity('director', 'dispatch', `Intent: ${action.intent} — "${userMessage.substring(0, 80)}"`, { intent: action.intent, confidence: action.confidence, org: activeOrg.id });
+
+  } catch (e) {
+    console.error('[DIRECTOR] Dispatch error:', e.message);
+    bot.sendMessage(msg.chat.id, `❌ Something went wrong: ${e.message}\n\nTry again or use /fleet to check agent health.`);
+  }
+});
+
+// ============================================
+// CRON SCHEDULES
+// ============================================
+
+// Daily full agent cycle at 7:00am EST (12:00 UTC)
+const cronSchedule = process.env.CRON_SCHEDULE || '0 12 * * *';
+cron.schedule(cronSchedule, async () => {
+  console.log('⏰ Daily grant research cycle triggered');
+  try {
+    const results = await runFullAgentCycle();
+
+    // Send briefing to owner
+    if (ownerChatId) {
+      for (const org of ORGS) {
+        try {
+          const briefing = await generateBriefing(org.id);
+          bot.sendMessage(ownerChatId, `📋 Daily Briefing — ${org.name}\n\n${briefing}`, { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(ownerChatId, `📋 Daily Briefing — ${org.name}\n\n${briefing}`));
+        } catch (e) { console.error(`Briefing error for ${org.id}:`, e.message); }
+      }
+    }
+
+    await logActivity('director', 'scheduled_cycle', 'Daily 7am grant research cycle', results);
+  } catch (e) { console.error('Daily cycle error:', e.message); }
+});
+
+// Deadline check every 6 hours
+cron.schedule('0 */6 * * *', async () => {
+  console.log('⏰ Deadline check triggered');
+  try {
+    const result = await dispatchDeadlineCheck({});
+
+    // Alert owner of urgent deadlines
+    if (ownerChatId && result.result) {
+      const hasUrgent = result.result.toLowerCase().includes('urgent') || result.result.includes('🚨');
+      if (hasUrgent) {
+        bot.sendMessage(ownerChatId, `🚨 Deadline Alert\n\n${result.result}`, { parse_mode: 'Markdown' }).catch(() => {});
+      }
+    }
+
+    await logActivity('tracker', 'scheduled_deadline', '6-hour deadline check');
+  } catch (e) { console.error('Deadline check error:', e.message); }
+});
+
+// Monitoring scan twice daily at 10am and 4pm EST (15:00 and 21:00 UTC)
+cron.schedule('0 15,21 * * *', async () => {
+  console.log('⏰ Monitoring scan triggered');
+  try {
+    for (const org of ORGS) {
+      await dispatchMonitoringScan({
+        orgId: org.id, orgName: org.name, orgType: org.orgType,
+        regions: org.regions, grantPriorities: JSON.stringify(org.grantPriorities),
+      });
+    }
+    await logActivity('monitor', 'scheduled_scan', 'Monitoring scan complete');
+  } catch (e) { console.error('Monitoring scan error:', e.message); }
+});
+
+// Weekly comprehensive report every Monday at 9am EST (14:00 UTC)
+cron.schedule('0 14 * * 1', async () => {
+  console.log('⏰ Weekly report triggered');
+  try {
+    for (const org of ORGS) {
+      if (org.emailTo) {
+        await dispatchEmailReport({ orgId: org.id, orgName: org.name, emailTo: org.emailTo });
+      }
+    }
+    await logActivity('reporter', 'scheduled_weekly', 'Weekly Monday report');
+  } catch (e) { console.error('Weekly report error:', e.message); }
+});
+
+// ============================================
+// EXPRESS SERVER + API
+// ============================================
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// CORS
+const VERCEL_DASHBOARD_URL = process.env.VERCEL_DASHBOARD_URL || '*';
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', VERCEL_DASHBOARD_URL);
+  res.header('Access-Control-Allow-Headers', 'Content-Type, x-api-secret');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
+app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.json({
+    service: 'grantiq-bot',
+    status: 'online',
+    version: '1.0.0',
+    orgs: ORGS.map(o => ({ id: o.id, name: o.name, type: o.orgType })),
+    agents: ['director', 'finder', 'writer', 'analyst', 'tracker', 'monitor', 'reporter'],
+    telegram: !!TELEGRAM_TOKEN,
+    claude: !!ANTHROPIC_KEY,
+    composio: !!COMPOSIO_API_KEY,
+    supabase: !!SUPABASE_URL,
+    uptime: Math.floor(process.uptime()),
+  });
+});
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    schedule: cronSchedule,
+    uptime: Math.floor(process.uptime()),
+    orgs: ORGS.length,
+    activeOrg: activeOrgId,
+  });
+});
+
+app.get('/api/data', async (req, res) => {
+  try {
+    const [grants, drafts, runs, alerts] = await Promise.all([
+      supabaseGet('grant_opportunities', 'order=match_score.desc&limit=100'),
+      supabaseGet('application_drafts', 'order=created_at.desc&limit=50'),
+      supabaseGet('grant_runs', 'order=run_date.desc&limit=30'),
+      supabaseGet('deadline_alerts', 'order=created_at.desc&limit=20'),
+    ]);
+    res.json({
+      grants: Array.isArray(grants) ? grants : [],
+      drafts: Array.isArray(drafts) ? drafts : [],
+      runs: Array.isArray(runs) ? runs : [],
+      alerts: Array.isArray(alerts) ? alerts : [],
+      orgs: ORGS.map(o => ({ id: o.id, name: o.name, type: o.orgType, certs: (o.certifications || []).length })),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/run', async (req, res) => {
+  const secret = req.headers['x-api-secret'];
+  if (RUN_SECRET && secret !== RUN_SECRET) {
+    return res.status(401).json({ error: 'Invalid secret' });
+  }
+  res.json({ status: 'started', message: 'Full agent cycle initiated' });
+  // Run async — don't block the response
+  runFullAgentCycle().catch(e => console.error('API run error:', e.message));
+});
+
+app.listen(PORT, () => {
+  console.log('');
+  console.log('🏛️ GrantIQ Bot — AI Grant Research Agency');
+  console.log('==========================================');
+  console.log(`🧠 Director: Online (Claude Sonnet)`);
+  console.log(`🔍 Finder: Ready (Perplexity + YouTube + Web)`);
+  console.log(`✍️  Writer: Ready (Application Narratives)`);
+  console.log(`📋 Analyst: Ready (Eligibility Scoring)`);
+  console.log(`⏰ Tracker: Ready (Deadline Management)`);
+  console.log(`👁️  Monitor: Ready (Grant Monitoring)`);
+  console.log(`📊 Reporter: Ready (Reports + Email + Drive)`);
+  console.log('');
+  console.log(`📱 Telegram: ${TELEGRAM_TOKEN ? 'Connected' : '❌ Missing'}`);
+  console.log(`🧠 Claude: ${ANTHROPIC_KEY ? 'Connected' : '❌ Missing'}`);
+  console.log(`🔧 Composio: ${COMPOSIO_API_KEY ? 'Connected' : '⚠️ Not set'}`);
+  console.log(`🔍 Perplexity: ${process.env.PERPLEXITY_API_KEY ? 'Connected' : '⚠️ Not set'}`);
+  console.log(`📺 YouTube: ${process.env.YOUTUBE_API_KEY ? 'Connected' : '⚠️ Not set'}`);
+  console.log(`📁 Google Drive: ${process.env.GOOGLE_SERVICE_ACCOUNT ? 'Connected' : '⚠️ Not set'}`);
+  console.log('');
+  console.log(`🏛️ Organizations: ${ORGS.map(o => o.name).join(' | ')}`);
+  console.log(`⏰ Cron: Daily 7am EST, Deadlines q6h, Monitor 10am/4pm, Weekly Mon 9am`);
+  console.log(`🚀 API: http://localhost:${PORT}`);
+  console.log('');
+});

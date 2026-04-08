@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrantIQ — Grant Research Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a25;
+    --border: #2a2a3a;
+    --text: #e4e4ef;
+    --text2: #8888a0;
+    --accent: #6366f1;
+    --accent2: #818cf8;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --blue: #3b82f6;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --surface2: #f0f0f5;
+      --border: #e0e0e8;
+      --text: #1a1a2e;
+      --text2: #6b6b80;
+      --accent: #4f46e5;
+      --accent2: #6366f1;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { width: 240px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 0; flex-shrink: 0; }
+  .sidebar h1 { padding: 0 20px; font-size: 20px; margin-bottom: 4px; color: var(--accent2); }
+  .sidebar .subtitle { padding: 0 20px; font-size: 11px; color: var(--text2); margin-bottom: 24px; letter-spacing: 1px; text-transform: uppercase; }
+  .nav-section { padding: 0 12px; margin-bottom: 16px; }
+  .nav-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); padding: 0 8px; margin-bottom: 6px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.15s; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent); color: white; }
+  .nav-item .icon { width: 16px; text-align: center; }
+
+  /* Main */
+  .main { flex: 1; padding: 24px; overflow-y: auto; }
+
+  /* Stats Row */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin-bottom: 6px; }
+  .stat .value { font-size: 28px; font-weight: 700; }
+  .stat .sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+  /* Table */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+  .table-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .table-header h2 { font-size: 16px; }
+  .table-filters { display: flex; gap: 8px; }
+  .filter-btn { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; font-size: 12px; }
+  .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  tr:hover { background: var(--surface2); }
+  tr.expandable { cursor: pointer; }
+
+  /* Score Bar */
+  .score-bar { display: flex; align-items: center; gap: 8px; }
+  .score-bar .bar { width: 60px; height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; }
+  .score-bar .bar .fill { height: 100%; border-radius: 3px; }
+  .score-high .fill { background: var(--green); }
+  .score-mid .fill { background: var(--yellow); }
+  .score-low .fill { background: var(--red); }
+
+  /* Expanded Row */
+  .expanded-row { display: none; }
+  .expanded-row.show { display: table-row; }
+  .expanded-row td { padding: 16px 24px; background: var(--surface2); }
+  .draft-content { white-space: pre-wrap; line-height: 1.6; max-width: 800px; }
+  .copy-btn { padding: 6px 16px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-top: 12px; }
+  .copy-btn:hover { background: var(--accent2); }
+
+  /* Alerts */
+  .alert-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .alert-card.urgent { border-left: 3px solid var(--red); }
+  .alert-card.approaching { border-left: 3px solid var(--yellow); }
+  .alert-card.info { border-left: 3px solid var(--blue); }
+  .alert-title { font-weight: 600; margin-bottom: 4px; }
+  .alert-meta { font-size: 12px; color: var(--text2); }
+
+  /* Actions */
+  .action-bar { display: flex; gap: 12px; margin-bottom: 24px; }
+  .action-btn { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  .action-btn:hover { background: var(--accent2); }
+  .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .action-btn.secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+  /* Status */
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .status-dot.online { background: var(--green); }
+  .status-dot.error { background: var(--red); }
+  .status-dot.idle { background: var(--text2); }
+
+  /* Loading */
+  .loading { text-align: center; padding: 40px; color: var(--text2); }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h1>GrantIQ</h1>
+    <div class="subtitle">Grant Research Agency</div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Organizations</div>
+      <div class="nav-item active" data-tab="all"><span class="icon">📊</span> All Orgs</div>
+      <div class="nav-item" data-tab="holigenix_healthcare"><span class="icon">🏥</span> Holigenix Healthcare</div>
+      <div class="nav-item" data-tab="k1_management"><span class="icon">🏗️</span> K1 Management</div>
+      <div class="nav-item" data-tab="owner_nonprofit"><span class="icon">🏛️</span> Owner Nonprofit</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Views</div>
+      <div class="nav-item" data-view="grants"><span class="icon">📋</span> Grants</div>
+      <div class="nav-item" data-view="drafts"><span class="icon">✍️</span> Applications</div>
+      <div class="nav-item" data-view="alerts"><span class="icon">🚨</span> Alerts</div>
+      <div class="nav-item" data-view="history"><span class="icon">📈</span> Run History</div>
+    </div>
+
+    <div class="nav-section" style="margin-top: auto; padding-top: 20px;">
+      <div class="nav-section-title">System</div>
+      <div id="api-status" class="nav-item"><span class="icon"><span class="status-dot idle"></span></span> Connecting...</div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div id="content">
+      <div class="loading"><div class="spinner"></div><p style="margin-top: 12px;">Loading dashboard...</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const API_URL = 'https://YOUR-RAILWAY-URL.railway.app';
+const RUN_SECRET = 'your-run-secret';
+
+let dashboardData = null;
+let activeTab = 'all';
+let activeView = 'grants';
+
+// ── DATA FETCH ──
+async function fetchData() {
+  try {
+    const res = await fetch(`${API_URL}/api/data`);
+    dashboardData = await res.json();
+    updateStatus(true);
+    render();
+  } catch (e) {
+    console.error('Fetch error:', e);
+    updateStatus(false);
+    document.getElementById('content').innerHTML = `<div class="loading"><p>Cannot connect to GrantIQ API</p><p style="font-size:12px;color:var(--text2);margin-top:8px;">Check that the Railway backend is running and API_URL is correct.</p></div>`;
+  }
+}
+
+function updateStatus(online) {
+  const el = document.getElementById('api-status');
+  el.innerHTML = `<span class="icon"><span class="status-dot ${online ? 'online' : 'error'}"></span></span> ${online ? 'Connected' : 'Offline'}`;
+}
+
+// ── RENDER ──
+function render() {
+  if (!dashboardData) return;
+  const d = dashboardData;
+
+  // Filter by org
+  const grants = activeTab === 'all' ? d.grants : d.grants.filter(g => g.org_id === activeTab);
+  const drafts = activeTab === 'all' ? d.drafts : d.drafts.filter(dr => dr.org_id === activeTab);
+  const alerts = activeTab === 'all' ? d.alerts : d.alerts.filter(a => a.org_id === activeTab);
+  const runs = activeTab === 'all' ? d.runs : d.runs.filter(r => r.org_id === activeTab);
+
+  const bestScore = grants.length > 0 ? Math.max(...grants.map(g => g.match_score || 0)) : 0;
+  const orgCount = d.orgs?.length || 0;
+  const urgentAlerts = alerts.filter(a => a.urgency === 'urgent').length;
+
+  let html = '';
+
+  // Action Bar
+  html += `<div class="action-bar">
+    <button class="action-btn" onclick="runNow()" id="run-btn">Run Full Cycle</button>
+    <button class="action-btn secondary" onclick="fetchData()">Refresh</button>
+    <span style="margin-left:auto;font-size:12px;color:var(--text2);">Last updated: ${d.timestamp ? new Date(d.timestamp).toLocaleString() : 'N/A'}</span>
+  </div>`;
+
+  // Stats
+  html += `<div class="stats">
+    <div class="stat"><div class="label">Grants Found</div><div class="value">${grants.length}</div><div class="sub">${activeTab === 'all' ? 'across all orgs' : getOrgName(activeTab)}</div></div>
+    <div class="stat"><div class="label">Best Match</div><div class="value">${bestScore}%</div><div class="sub">highest eligibility score</div></div>
+    <div class="stat"><div class="label">Drafts Ready</div><div class="value">${drafts.length}</div><div class="sub">application narratives</div></div>
+    <div class="stat"><div class="label">Active Alerts</div><div class="value" style="color:${urgentAlerts > 0 ? 'var(--red)' : 'var(--text)'}">${alerts.length}</div><div class="sub">${urgentAlerts} urgent</div></div>
+    <div class="stat"><div class="label">Organizations</div><div class="value">${orgCount}</div><div class="sub">being monitored</div></div>
+    <div class="stat"><div class="label">Total Runs</div><div class="value">${d.runs?.length || 0}</div><div class="sub">research cycles</div></div>
+  </div>`;
+
+  // View Content
+  if (activeView === 'grants') {
+    html += renderGrantsTable(grants);
+  } else if (activeView === 'drafts') {
+    html += renderDraftsTable(drafts);
+  } else if (activeView === 'alerts') {
+    html += renderAlerts(alerts);
+  } else if (activeView === 'history') {
+    html += renderHistory(runs);
+  }
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function renderGrantsTable(grants) {
+  if (grants.length === 0) return '<div class="table-wrap"><div class="table-header"><h2>Grant Opportunities</h2></div><div style="padding:40px;text-align:center;color:var(--text2)">No grants found yet. Run a search to discover opportunities.</div></div>';
+
+  let rows = '';
+  grants.forEach((g, i) => {
+    const scoreClass = g.match_score >= 80 ? 'score-high' : g.match_score >= 60 ? 'score-mid' : 'score-low';
+    const deadline = g.deadline ? new Date(g.deadline).toLocaleDateString() : 'Rolling';
+    const orgName = getOrgName(g.org_id);
+
+    rows += `<tr class="expandable" onclick="toggleRow(${i})">
+      <td><strong>${esc(g.name || 'Unnamed')}</strong><br><span style="color:var(--text2);font-size:11px">${esc(g.funder || '')}</span></td>
+      <td>${esc(orgName)}</td>
+      <td>${esc(g.amount || 'Varies')}</td>
+      <td>${deadline}</td>
+      <td>${esc(g.region || '')}</td>
+      <td><div class="score-bar ${scoreClass}"><div class="bar"><div class="fill" style="width:${g.match_score || 0}%"></div></div><span>${g.match_score || 0}</span></div></td>
+      <td><span style="text-transform:capitalize">${esc(g.status || 'new')}</span></td>
+    </tr>
+    <tr class="expanded-row" id="row-${i}"><td colspan="7">
+      <div class="draft-content">${esc(g.description || g.certification_advantage || 'No details available.')}</div>
+      ${g.url ? `<a href="${esc(g.url)}" target="_blank" style="color:var(--accent);font-size:13px;display:inline-block;margin-top:8px;">View Grant Page →</a>` : ''}
+    </td></tr>`;
+  });
+
+  return `<div class="table-wrap">
+    <div class="table-header"><h2>Grant Opportunities (${grants.length})</h2></div>
+    <table>
+      <thead><tr><th>Grant</th><th>Org</th><th>Amount</th><th>Deadline</th><th>Region</th><th>Match</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderDraftsTable(drafts) {
+  if (drafts.length === 0) return '<div class="table-wrap"><div class="table-header"><h2>Application Drafts</h2></div><div style="padding:40px;text-align:center;color:var(--text2)">No drafts yet. Run Writer to generate application narratives.</div></div>';
+
+  let rows = '';
+  drafts.forEach((d, i) => {
+    const orgName = getOrgName(d.org_id);
+    rows += `<tr class="expandable" onclick="toggleDraft(${i})">
+      <td><strong>${esc(d.grant_name || 'Draft')}</strong></td>
+      <td>${esc(orgName)}</td>
+      <td>${d.word_count || '—'} words</td>
+      <td>${esc(d.framework || 'standard')}</td>
+      <td><span style="text-transform:capitalize">${esc(d.status || 'draft')}</span></td>
+      <td>${d.created_at ? new Date(d.created_at).toLocaleDateString() : '—'}</td>
+    </tr>
+    <tr class="expanded-row" id="draft-${i}"><td colspan="6">
+      <div class="draft-content">${esc(d.narrative || 'No narrative content.')}</div>
+      <button class="copy-btn" onclick="event.stopPropagation();copyText(\`${esc(d.narrative || '')}\`)">Copy to Clipboard</button>
+    </td></tr>`;
+  });
+
+  return `<div class="table-wrap">
+    <div class="table-header"><h2>Application Drafts (${drafts.length})</h2></div>
+    <table>
+      <thead><tr><th>Grant</th><th>Org</th><th>Words</th><th>Framework</th><th>Status</th><th>Created</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderAlerts(alerts) {
+  if (alerts.length === 0) return '<div class="table-wrap"><div class="table-header"><h2>Alerts</h2></div><div style="padding:40px;text-align:center;color:var(--text2)">No active alerts. Check back after a monitoring scan.</div></div>';
+
+  let html = '<h2 style="margin-bottom:16px">Alerts & Deadlines</h2>';
+  alerts.forEach(a => {
+    html += `<div class="alert-card ${a.urgency || 'info'}">
+      <div class="alert-title">${a.urgency === 'urgent' ? '🚨' : a.urgency === 'approaching' ? '⚠️' : 'ℹ️'} ${esc(a.grant_name || 'Alert')}</div>
+      <div style="font-size:13px;margin:6px 0;">${esc(a.message || '')}</div>
+      <div class="alert-meta">${getOrgName(a.org_id)} | Deadline: ${a.deadline ? new Date(a.deadline).toLocaleDateString() : 'N/A'}</div>
+    </div>`;
+  });
+  return html;
+}
+
+function renderHistory(runs) {
+  if (runs.length === 0) return '<div class="table-wrap"><div class="table-header"><h2>Run History</h2></div><div style="padding:40px;text-align:center;color:var(--text2)">No runs yet. Start a full cycle to begin.</div></div>';
+
+  let rows = '';
+  runs.forEach(r => {
+    rows += `<tr>
+      <td>${r.run_date ? new Date(r.run_date).toLocaleString() : '—'}</td>
+      <td>${getOrgName(r.org_id)}</td>
+      <td>${r.grants_found || 0}</td>
+      <td>${r.grants_emailed ? '✅' : '—'}</td>
+      <td>${r.drive_uploaded ? '✅' : '—'}</td>
+      <td>${r.youtube_videos || 0}</td>
+      <td><span style="text-transform:capitalize">${esc(r.status || 'unknown')}</span></td>
+    </tr>`;
+  });
+
+  return `<div class="table-wrap">
+    <div class="table-header"><h2>Run History (${runs.length})</h2></div>
+    <table>
+      <thead><tr><th>Date</th><th>Org</th><th>Grants</th><th>Emailed</th><th>Drive</th><th>YouTube</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+// ── HELPERS ──
+function getOrgName(id) {
+  const map = { holigenix_healthcare: 'Holigenix Healthcare', k1_management: 'K1 Management', owner_nonprofit: 'Owner Nonprofit' };
+  return map[id] || id || 'Unknown';
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/`/g, '&#96;');
+}
+
+function toggleRow(i) {
+  document.getElementById(`row-${i}`)?.classList.toggle('show');
+}
+
+function toggleDraft(i) {
+  document.getElementById(`draft-${i}`)?.classList.toggle('show');
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to Clipboard', 2000);
+  });
+}
+
+async function runNow() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  try {
+    await fetch(`${API_URL}/api/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-secret': RUN_SECRET },
+    });
+    btn.textContent = 'Cycle Started!';
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Run Full Cycle'; }, 5000);
+  } catch (e) {
+    btn.textContent = 'Error';
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Run Full Cycle'; }, 3000);
+  }
+}
+
+// ── NAV ──
+document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item[data-tab]').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    activeTab = item.dataset.tab;
+    render();
+  });
+});
+
+document.querySelectorAll('.nav-item[data-view]').forEach(item => {
+  item.addEventListener('click', () => {
+    activeView = item.dataset.view;
+    render();
+  });
+});
+
+// ── INIT ──
+fetchData();
+setInterval(fetchData, 60000);
+</script>
+</body>
+</html>
