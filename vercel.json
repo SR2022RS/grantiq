@@ -6,6 +6,8 @@
   "routes": [
     {"src": "/k1-upload", "dest": "/dashboard/k1-upload.html"},
     {"src": "/k1", "dest": "/dashboard/k1-upload.html"},
+    {"src": "/holigenix-upload", "dest": "/dashboard/holigenix-upload.html"},
+    {"src": "/holigenix", "dest": "/dashboard/holigenix-upload.html"},
     {"src": "/(.*)", "dest": "/dashboard/index.html"}
   ]
 }
