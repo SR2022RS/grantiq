@@ -15,18 +15,17 @@ function getOpenRouterKey() {
 }
 
 const MODEL_CONFIG = {
-  // Premium — orchestration, grant writing (Claude Sonnet via OpenRouter)
-  'director':  { openrouterModel: 'anthropic/claude-sonnet-4-20250514', anthropicModel: 'claude-sonnet-4-20250514' },
-  'writer':    { openrouterModel: 'anthropic/claude-sonnet-4-20250514', anthropicModel: 'claude-sonnet-4-20250514' },
-
-  // Standard — research, analysis, tracking (cheaper models)
-  'finder':    { openrouterModel: 'openai/gpt-4o-mini', anthropicModel: 'claude-sonnet-4-20250514' },
-  'analyst':   { openrouterModel: 'openai/gpt-4o-mini', anthropicModel: 'claude-sonnet-4-20250514' },
-  'tracker':   { openrouterModel: 'openai/gpt-4o-mini', anthropicModel: 'claude-sonnet-4-20250514' },
-
-  // Budget — monitoring, reporting, formatting
-  'monitor':   { openrouterModel: 'openai/gpt-4o-mini', anthropicModel: 'claude-sonnet-4-20250514' },
-  'reporter':  { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  // All agents use cost-efficient models via OpenRouter
+  'director':    { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  'writer':      { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  'applicator':  { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  'finder':      { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  'analyst':     { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  'tracker':     { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  'monitor':     { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  'reporter':    { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  'vault':       { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
+  'budgetgen':   { openrouterModel: 'google/gemini-2.0-flash-001', anthropicModel: 'claude-sonnet-4-20250514' },
 };
 
 function resolveModel(agentRole) {

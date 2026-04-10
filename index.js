@@ -308,7 +308,7 @@ async function askClaude(systemPrompt, userPrompt) {
           'X-Title': 'GrantIQ',
         },
         body: JSON.stringify({
-          model: 'anthropic/claude-sonnet-4-20250514',
+          model: 'google/gemini-2.0-flash-001',
           max_tokens: 4096,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -1176,46 +1176,31 @@ RESPOND WITH ONLY valid JSON:
 // CRON SCHEDULES
 // ============================================
 
-// Daily full agent cycle at 7:00am EST (12:00 UTC)
+// ── CRON SCHEDULES — All Telegram alerts DISABLED ──
+// Cron jobs run silently (log only, no Telegram messages)
+// Use /run, /search, /briefing in Telegram or portal to trigger manually
+
 const cronSchedule = process.env.CRON_SCHEDULE || '0 12 * * *';
+
+// Daily grant research — logs only, no Telegram
 cron.schedule(cronSchedule, async () => {
   console.log('⏰ Daily grant research cycle triggered');
   try {
     const results = await runFullAgentCycle();
-
-    // Send briefing to owner
-    if (ownerChatId) {
-      for (const org of ORGS) {
-        try {
-          const briefing = await generateBriefing(org.id);
-          bot.sendMessage(ownerChatId, `📋 Daily Briefing — ${org.name}\n\n${briefing}`, { parse_mode: 'Markdown' }).catch(() => bot.sendMessage(ownerChatId, `📋 Daily Briefing — ${org.name}\n\n${briefing}`));
-        } catch (e) { console.error(`Briefing error for ${org.id}:`, e.message); }
-      }
-    }
-
-    await logActivity('director', 'scheduled_cycle', 'Daily 7am grant research cycle', results);
+    await logActivity('director', 'scheduled_cycle', 'Daily grant research cycle', results);
   } catch (e) { console.error('Daily cycle error:', e.message); }
 });
 
-// Deadline check every 6 hours
+// Deadline check every 6 hours — logs only, no Telegram
 cron.schedule('0 */6 * * *', async () => {
   console.log('⏰ Deadline check triggered');
   try {
-    const result = await dispatchDeadlineCheck({});
-
-    // Alert owner of urgent deadlines
-    if (ownerChatId && result.result) {
-      const hasUrgent = result.result.toLowerCase().includes('urgent') || result.result.includes('🚨');
-      if (hasUrgent) {
-        bot.sendMessage(ownerChatId, `🚨 Deadline Alert\n\n${result.result}`, { parse_mode: 'Markdown' }).catch(() => {});
-      }
-    }
-
+    await dispatchDeadlineCheck({});
     await logActivity('tracker', 'scheduled_deadline', '6-hour deadline check');
   } catch (e) { console.error('Deadline check error:', e.message); }
 });
 
-// Monitoring scan twice daily at 10am and 4pm EST (15:00 and 21:00 UTC)
+// Monitoring scan twice daily — logs only, no Telegram
 cron.schedule('0 15,21 * * *', async () => {
   console.log('⏰ Monitoring scan triggered');
   try {
@@ -1229,7 +1214,7 @@ cron.schedule('0 15,21 * * *', async () => {
   } catch (e) { console.error('Monitoring scan error:', e.message); }
 });
 
-// Weekly comprehensive report every Monday at 9am EST (14:00 UTC)
+// Weekly report — logs only, no Telegram
 cron.schedule('0 14 * * 1', async () => {
   console.log('⏰ Weekly report triggered');
   try {
