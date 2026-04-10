@@ -1,6 +1,15 @@
 require('dotenv').config({ path: '.env.local' });
 require('dotenv').config(); // also load .env if present
 
+// ── GLOBAL ERROR HANDLERS (prevent Railway crash loops) ──
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled rejection:', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err.message);
+  console.error(err.stack);
+});
+
 const TelegramBot = require('node-telegram-bot-api');
 const cron = require('node-cron');
 const express = require('express');
@@ -523,6 +532,13 @@ async function runFullAgentCycle() {
 // TELEGRAM BOT
 // ============================================
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+
+bot.on('polling_error', (err) => {
+  console.error('[Telegram] Polling error:', err.code, err.message);
+});
+bot.on('error', (err) => {
+  console.error('[Telegram] Error:', err.message);
+});
 
 let activeOrgId = 'holigenix_healthcare'; // Default org
 
