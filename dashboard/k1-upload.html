@@ -61,6 +61,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .replace-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:10px}
 .replace-btn:hover{border-color:var(--text2);color:var(--text2)}
 
+.doc-actions-group{display:flex;flex-direction:column;gap:4px;align-items:stretch}
+.action-row{display:flex;gap:4px}
+.action-btn{padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--gold);cursor:pointer;font-size:10px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;transition:all .15s;white-space:nowrap}
+.action-btn:hover{border-color:var(--gold);background:rgba(201,168,76,0.08)}
+.action-btn.view{color:var(--accent2);border-color:var(--border)}
+.action-btn.view:hover{border-color:var(--accent2);background:rgba(124,92,255,0.08)}
+.action-btn svg{width:11px;height:11px}
+
 /* Footer */
 .footer{text-align:center;padding:28px 0;color:var(--text3);font-size:11px;border-top:1px solid var(--border);margin-top:20px;line-height:1.8}
 .footer a{color:var(--accent2);text-decoration:none}
@@ -90,6 +98,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   .upload-btn{width:100%;text-align:center;padding:10px 20px;font-size:13px}
   .replace-btn{width:100%;text-align:center;padding:8px}
   .done-icon{justify-content:center}
+  .doc-actions-group{width:100%}
+  .action-row{width:100%}
+  .action-btn{flex:1;padding:8px;font-size:11px}
 }
 </style>
 </head>
@@ -189,6 +200,8 @@ function renderAll(){
 
 function renderDoc(d){
   const isUploaded=d.status==='uploaded';
+  const hasUrl=isUploaded&&d.file_url;
+  const fileName=hasUrl?decodeURIComponent(d.file_url.split('/').pop()||d.doc_name):d.doc_name;
   return`<div class="doc ${isUploaded?'uploaded':''}">
     <div class="doc-status ${isUploaded?'uploaded':'missing'}">${isUploaded?'✅':'📄'}</div>
     <div class="doc-info">
@@ -198,7 +211,19 @@ function renderDoc(d){
     </div>
     <div class="doc-actions">
       ${isUploaded
-        ?`<button class="replace-btn" onclick="startUpload('${d.id}','${esc(d.doc_type)}')">Replace</button>`
+        ?`<div class="doc-actions-group">
+            ${hasUrl?`<div class="action-row">
+              <a class="action-btn view" href="${esc(d.file_url)}" target="_blank" rel="noopener noreferrer" title="View in new tab">
+                <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                View
+              </a>
+              <a class="action-btn" href="${esc(d.file_url)}" download="${esc(fileName)}" target="_blank" rel="noopener noreferrer" title="Download file">
+                <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Download
+              </a>
+            </div>`:''}
+            <button class="replace-btn" onclick="startUpload('${d.id}','${esc(d.doc_type)}')">Replace</button>
+          </div>`
         :`<button class="upload-btn" id="btn-${d.id}" onclick="startUpload('${d.id}','${esc(d.doc_type)}')">Upload</button>`
       }
     </div>
