@@ -1,12 +1,13 @@
 {
   "name": "grantiq-bot",
   "version": "1.0.0",
-  "description": "GrantIQ \u2014 Autonomous AI Grant Research & Application Agent (Telegram + Claude + Composio)",
+  "description": "GrantIQ — Autonomous AI Grant Research & Application Agent (Telegram + Claude + Composio)",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
+    "archiver": "^7.0.1",
     "composio-core": "^0.5.39",
     "dotenv": "^16.4.7",
     "express": "^5.2.1",

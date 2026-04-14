@@ -1,9 +1,12 @@
 {
   "version": 2,
   "builds": [
-    {"src": "dashboard/**/*.html", "use": "@vercel/static"}
+    {"src": "dashboard/**/*.html", "use": "@vercel/static"},
+    {"src": "api/*.js", "use": "@vercel/node"}
   ],
   "routes": [
+    {"src": "/api/download", "dest": "/api/download.js"},
+    {"src": "/api/zip", "dest": "/api/zip.js"},
     {"src": "/k1-upload", "dest": "/dashboard/k1-upload.html"},
     {"src": "/k1", "dest": "/dashboard/k1-upload.html"},
     {"src": "/holigenix-upload", "dest": "/dashboard/holigenix-upload.html"},
