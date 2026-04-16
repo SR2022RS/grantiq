@@ -44,22 +44,33 @@ const required = { TELEGRAM_TOKEN };
 const requiredLLM = { 'OPENROUTER_API_KEY or ANTHROPIC_KEY': HAS_LLM };
 const optional = { SUPABASE_URL, SUPABASE_KEY, COMPOSIO_API_KEY, ANTHROPIC_KEY, OPENROUTER_API_KEY, PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY, YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY, GOOGLE_SERVICE_ACCOUNT: process.env.GOOGLE_SERVICE_ACCOUNT, EMAIL_USER: process.env.EMAIL_USER };
 
+// Startup errors are collected here and surfaced via /api/health so Railway
+// deploys never 502 silently — we always bind the port and return diagnostics.
+const STARTUP_ERRORS = [];
+const ENV_STATUS = {};
+
 console.log('\n🔍 Environment Check:');
-let missingRequired = false;
 for (const [key, val] of Object.entries(required)) {
-  if (!val) { console.error(`  ❌ ${key} — REQUIRED, not set`); missingRequired = true; }
-  else { console.log(`  ✅ ${key}`); }
+  ENV_STATUS[key] = !!val;
+  if (!val) {
+    console.error(`  ❌ ${key} — REQUIRED, not set`);
+    STARTUP_ERRORS.push(`Missing required env var: ${key}`);
+  } else { console.log(`  ✅ ${key}`); }
 }
 for (const [key, val] of Object.entries(requiredLLM)) {
-  if (!val) { console.error(`  ❌ ${key} — REQUIRED, at least one LLM key needed`); missingRequired = true; }
-  else { console.log(`  ✅ LLM Provider: ${OPENROUTER_API_KEY ? 'OpenRouter (primary)' : 'Anthropic (direct)'}`); }
+  ENV_STATUS[key] = !!val;
+  if (!val) {
+    console.error(`  ❌ ${key} — REQUIRED, at least one LLM key needed`);
+    STARTUP_ERRORS.push(`Missing LLM provider key (OPENROUTER_API_KEY or ANTHROPIC_KEY)`);
+  } else { console.log(`  ✅ LLM Provider: ${OPENROUTER_API_KEY ? 'OpenRouter (primary)' : 'Anthropic (direct)'}`); }
 }
 for (const [key, val] of Object.entries(optional)) {
+  ENV_STATUS[key] = !!val;
   console.log(`  ${val ? '✅' : '⚠️'} ${key}${val ? '' : ' — not set (optional)'}`);
 }
-if (missingRequired) {
-  console.error('\nFATAL: Missing required env vars. See above.\n');
-  process.exit(1);
+if (STARTUP_ERRORS.length > 0) {
+  console.error('\n⚠️  Missing required env vars — continuing to bind HTTP port for diagnostics.');
+  console.error('    Check /api/health after deploy to see which vars are missing.\n');
 }
 console.log('');
 
@@ -531,14 +542,38 @@ async function runFullAgentCycle() {
 // ============================================
 // TELEGRAM BOT
 // ============================================
-const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
-
-bot.on('polling_error', (err) => {
-  console.error('[Telegram] Polling error:', err.code, err.message);
-});
-bot.on('error', (err) => {
-  console.error('[Telegram] Error:', err.message);
-});
+// Wrapped in try/catch so a bad/missing token OR polling conflict doesn't
+// kill module init. If bot fails to construct, we fall back to a stub that
+// silently swallows calls — Express + HTTP API keep working.
+let bot;
+try {
+  if (!TELEGRAM_TOKEN) {
+    throw new Error('TELEGRAM_TOKEN not set — using stub bot');
+  }
+  bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+  bot.on('polling_error', (err) => {
+    console.error('[Telegram] Polling error:', err.code, err.message);
+  });
+  bot.on('error', (err) => {
+    console.error('[Telegram] Error:', err.message);
+  });
+  console.log('[Telegram] Bot initialized with polling enabled');
+} catch (err) {
+  console.error('[Telegram] Bot init failed, using stub:', err.message);
+  STARTUP_ERRORS.push(`TelegramBot init: ${err.message}`);
+  const noop = () => Promise.resolve();
+  bot = {
+    on: () => bot,
+    onText: () => bot,
+    sendMessage: noop,
+    editMessageText: noop,
+    answerCallbackQuery: noop,
+    setMyCommands: noop,
+    getMe: () => Promise.resolve({ ok: false, stub: true }),
+    stopPolling: noop,
+    isStub: true,
+  };
+}
 
 let activeOrgId = 'holigenix_healthcare'; // Default org
 
@@ -1279,11 +1314,15 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/api/health', (req, res) => {
   res.json({
-    status: 'ok',
+    status: STARTUP_ERRORS.length > 0 ? 'degraded' : 'ok',
     schedule: cronSchedule,
     uptime: Math.floor(process.uptime()),
     orgs: ORGS.length,
     activeOrg: activeOrgId,
+    startup_errors: STARTUP_ERRORS,
+    env: ENV_STATUS,
+    telegram_bot: bot?.isStub ? 'stub (not operational)' : 'live',
+    node_version: process.version,
   });
 });
 
