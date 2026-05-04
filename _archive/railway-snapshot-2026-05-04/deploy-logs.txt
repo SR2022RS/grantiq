@@ -1,0 +1,200 @@
+[WRITER] LLM error: anthropic/claude-sonnet-4-20250514 is not a valid model ID
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=eq.b8194005-8aca-437a-b097-5d937e2b07d9)
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=b5b2b2f9-0e19-4dc1-a84b-d2caff70932e",")
+[FINDER] Tool: web_search({"query":"construction grants Pennsylvania HUD Section 3"})
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=b9a3678e-3a46-4ca9-9d94-6da90d81a62a",")
+[holigenix_healthcare] Step 4: Reporter generating daily report...
+[LLM] analyst → openrouter/openai/gpt-4o-mini
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=c502449f-ab56-468e-b679-92283fb8d375",")
+[LLM] finder → openrouter/openai/gpt-4o-mini
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=659b5e0a-0385-4204-b85b-a5b55caab57f",")
+[LLM] reporter → openrouter/google/gemini-2.0-flash-001
+[REPORTER] Starting agent loop — task: Generate the daily grant report for Holigenix Healthcare LLC (holigenix_healthca...
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=b8194005-8aca-437a-b097-5d937e2b07d9",")
+[TRACKER] Iteration 1 — 1130ms — stop: tool_use, tools: 1
+[TRACKER] Tool: query_database({"table":"grant_opportunities","method":"GET","params":"deadline=lte.now() + interval '30 days'"})
+[LLM] analyst → openrouter/openai/gpt-4o-mini
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=e13b96d6-a017-4e42-88fb-5c30fc64f0ab",")
+[LLM] tracker → openrouter/openai/gpt-4o-mini
+[ANALYST] Iteration 2 — 1623ms — stop: end_turn, tools: 0
+[ANALYST] Completed in 2 iterations. Actions: 1
+[LLM] analyst → openrouter/openai/gpt-4o-mini
+[owner_nonprofit] Step 3: Writer drafting applications...
+[WRITER] Starting agent loop — task: Write application narratives for Owner Nonprofit (owner_nonprofit).
+
+Organizatio...
+[LLM] writer → openrouter/anthropic/claude-sonnet-4-20250514
+[WRITER] Iteration 1 — 60ms — stop: error, tools: 0
+[WRITER] LLM error: anthropic/claude-sonnet-4-20250514 is not a valid model ID
+[REPORTER] Iteration 1 — 1828ms — stop: tool_use, tools: 3
+[REPORTER] Tool: query_database({"params":"org_id=eq.owner_nonprofit&order=match_score.desc","method":"GET","table":"grant_opportuni)
+[owner_nonprofit] Step 4: Reporter generating daily report...
+[REPORTER] Tool: query_database({"params":"org_id=eq.owner_nonprofit&order=created_at.desc","table":"application_drafts","method":"G)
+[REPORTER] Iteration 1 — 1552ms — stop: tool_use, tools: 3
+[REPORTER] Tool: query_database({"table":"grant_opportunities","params":"org_id=eq.holigenix_healthcare&order=match_score.desc","met)
+[REPORTER] Starting agent loop — task: Generate the daily grant report for Owner Nonprofit (owner_nonprofit).
+
+1. Query...
+[LLM] reporter → openrouter/google/gemini-2.0-flash-001
+[TRACKER] Iteration 2 — 1183ms — stop: tool_use, tools: 1
+[TRACKER] Tool: query_database({"table":"grant_opportunities","method":"GET","params":"deadline=lte.now() + '30 days'"})
+[REPORTER] Tool: query_database({"method":"GET","table":"youtube_intel","params":"org_id=eq.owner_nonprofit&order=created_at.desc"})
+[REPORTER] Tool: query_database({"method":"GET","table":"application_drafts","params":"org_id=eq.holigenix_healthcare"})
+[LLM] tracker → openrouter/openai/gpt-4o-mini
+[LLM] reporter → openrouter/google/gemini-2.0-flash-001
+[FINDER] Iteration 4 — 1991ms — stop: tool_use, tools: 1
+[FINDER] Tool: youtube_search({"query":"K1 Management grants 2023","maxResults":5})
+[REPORTER] Tool: query_database({"method":"GET","table":"youtube_intel","params":"org_id=eq.holigenix_healthcare"})
+[FINDER] Iteration 3 — 3248ms — stop: end_turn, tools: 0
+[FINDER] Completed in 3 iterations. Actions: 3
+2026-04-10T17:25:46.520Z - 🚀 [Info] Give Feedback / Get Help: https://dub.composio.dev/discord 
+2026-04-10T17:25:46.520Z - 🐛 [Info] Create a new issue: https://github.com/ComposioHQ/composio/issues 
+2026-04-10T17:25:46.520Z - ⛔ [Info] If you need to debug this error, set env variable COMPOSIO_LOGGING_LEVEL=debug
+[YouTube] Composio search failed, trying direct API: 🔑 Access Denied
+[LLM] finder → openrouter/openai/gpt-4o-mini
+[LLM] reporter → openrouter/google/gemini-2.0-flash-001
+[owner_nonprofit] Step 2: Analyst scoring eligibility...
+[FINDER] Iteration 3 — 3075ms — stop: tool_use, tools: 3
+[FINDER] Tool: web_search({"query":"grants for small business technology adoption 2023"})
+[ANALYST] Starting agent loop — task: Analyze grant eligibility for Owner Nonprofit (owner_nonprofit).
+
+Organization p...
+[LLM] analyst → openrouter/openai/gpt-4o-mini
+[FINDER] Tool: web_search({"query":"minority business capacity building funding opportunities 2023"})
+[TRACKER] Iteration 3 — 1029ms — stop: tool_use, tools: 1
+[TRACKER] Tool: query_database({"table":"grant_opportunities","method":"GET","params":"deadline=lte.current_date + interval '30 day)
+[FINDER] Tool: web_search({"query":"local grants for contractors Pennsylvania New Jersey 2023"})
+[LLM] tracker → openrouter/openai/gpt-4o-mini
+[REPORTER] Iteration 1 — 1592ms — stop: tool_use, tools: 3
+[REPORTER] Tool: query_database({"method":"GET","table":"grant_opportunities","params":"org_id=eq.owner_nonprofit&order=match_score.)
+[LLM] finder → openrouter/openai/gpt-4o-mini
+[REPORTER] Tool: query_database({"params":"org_id=eq.owner_nonprofit&order=created_at.desc","table":"application_drafts","method":"G)
+[REPORTER] Iteration 2 — 1693ms — stop: tool_use, tools: 1
+[REPORTER] Tool: query_database({"body":{"grants_found":0,"drive_uploaded":0,"status":"empty","youtube_videos":0,"run_date":"2024-05)
+[REPORTER] Iteration 2 — 29161ms — stop: end_turn, tools: 0
+[REPORTER] Completed in 2 iterations. Actions: 3
+[REPORTER] Tool: query_database({"method":"GET","params":"org_id=eq.owner_nonprofit&order=created_at.desc","table":"youtube_intel"})
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"GET","params":"org_id=eq.owner_nonprofit&status=eq.new"})
+[FINDER] Iteration 1 — 6436ms — stop: tool_use, tools: 9
+[FINDER] Tool: web_search({"query":"K1 Management MBE MWBE capacity building grants Pennsylvania New Jersey Delaware 2023"})
+[LLM] reporter → openrouter/google/gemini-2.0-flash-001
+[ANALYST] Iteration 1 — 1108ms — stop: tool_use, tools: 1
+[HOLIGENIX_HEALTHCARE] ✅ Cycle complete
+
+[K1_MANAGEMENT] Starting grant research cycle...
+[k1_management] Step 1: Finder searching for grants...
+[LLM] reporter → openrouter/google/gemini-2.0-flash-001
+[FINDER] Tool: web_search({"query":"PHFA Healthy Homes grants Pennsylvania 2023"})
+[LLM] analyst → openrouter/openai/gpt-4o-mini
+[ANALYST] Iteration 4 — 8230ms — stop: tool_use, tools: 6
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=fcdb889c-af37-423b-b709-05d43e9d1787",")
+[FINDER] Iteration 5 — 1788ms — stop: end_turn, tools: 0
+[FINDER] Completed in 5 iterations. Actions: 20
+[FINDER] Starting agent loop — task: Search for grant opportunities for K1 Management LLC (k1_management).
+
+Organizat...
+[LLM] finder → openrouter/openai/gpt-4o-mini
+[FINDER] Tool: web_search({"query":"MBDA Business Center minority contractor development grants 2023"})
+[TRACKER] Iteration 4 — 1084ms — stop: tool_use, tools: 1
+[TRACKER] Tool: query_database({"table":"grant_opportunities","method":"GET","params":"deadline=lte.now() + '30 days'"})
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=c4b85ea0-7bb3-4fc5-9d92-86a5b0deb63a",")
+[k1_management] Step 2: Analyst scoring eligibility...
+[FINDER] Iteration 4 — 1046ms — stop: tool_use, tools: 1
+[FINDER] Tool: youtube_search({"query":"grants for minority-owned business Pennsylvania New Jersey Delaware 2023","maxResults":5})
+[FINDER] Tool: web_search({"query":"HUD Section 3 community development construction grants Pennsylvania New Jersey Delaware 2)
+[LLM] tracker → openrouter/openai/gpt-4o-mini
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=dea94e3b-a907-4bd8-869e-e52ae8481e7a",")
+[ANALYST] Starting agent loop — task: Analyze grant eligibility for K1 Management LLC (k1_management).
+
+Organization p...
+[LLM] analyst → openrouter/openai/gpt-4o-mini
+[REPORTER] Iteration 2 — 19014ms — stop: end_turn, tools: 0
+[REPORTER] Completed in 2 iterations. Actions: 3
+[FINDER] Tool: web_search({"query":"NJEDA MBE capacity building grants 2023"})
+[K1_MANAGEMENT] Starting grant research cycle...
+2026-04-10T17:25:48.979Z - 🚀 [Info] Give Feedback / Get Help: https://dub.composio.dev/discord 
+2026-04-10T17:25:48.979Z - 🐛 [Info] Create a new issue: https://github.com/ComposioHQ/composio/issues 
+[k1_management] Step 1: Finder searching for grants...
+2026-04-10T17:25:48.979Z - ⛔ [Info] If you need to debug this error, set env variable COMPOSIO_LOGGING_LEVEL=debug
+[YouTube] Composio search failed, trying direct API: 🔑 Access Denied
+[LLM] finder → openrouter/openai/gpt-4o-mini
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=ebf088fc-bfe2-4ba5-9987-c6c88615411d",")
+[REPORTER] Iteration 3 — 935ms — stop: end_turn, tools: 0
+[REPORTER] Completed in 3 iterations. Actions: 4
+[REPORTER] Iteration 2 — 18652ms — stop: end_turn, tools: 0
+[REPORTER] Completed in 2 iterations. Actions: 3
+[HOLIGENIX_HEALTHCARE] ✅ Cycle complete
+
+[FINDER] Tool: web_search({"query":"SBA Community Advantage grants 2023"})
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=733ce810-f6bd-49ad-a1f8-dd18e9c567e5",")
+[OWNER_NONPROFIT] ✅ Cycle complete
+
+[TRACKER] Checking deadlines across all orgs...
+[K1_MANAGEMENT] ✅ Cycle complete
+
+[OWNER_NONPROFIT] Starting grant research cycle...
+[owner_nonprofit] Step 1: Finder searching for grants...
+[ANALYST] Iteration 4 — 9124ms — stop: tool_use, tools: 7
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=fcdb889c-af37-423b-b709-05d43e9d1787",")
+[ANALYST] Iteration 4 — 6816ms — stop: tool_use, tools: 7
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=84065abb-dace-46eb-8b78-4635dfd61739",")
+[FINDER] Starting agent loop — task: Search for grant opportunities for K1 Management LLC (k1_management).
+
+Organizat...
+[LLM] finder → openrouter/openai/gpt-4o-mini
+[FINDER] Tool: web_search({"query":"Delaware OSD SBF supplier development grants 2023"})
+[TRACKER] Starting agent loop — task: Check for upcoming grant deadlines across all organizations.
+
+1. Query grant_opp...
+[LLM] tracker → openrouter/openai/gpt-4o-mini
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=b9a3678e-3a46-4ca9-9d94-6da90d81a62a",")
+[FINDER] Starting agent loop — task: Search for grant opportunities for Owner Nonprofit (owner_nonprofit).
+
+Organizat...
+[LLM] finder → openrouter/openai/gpt-4o-mini
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=c4b85ea0-7bb3-4fc5-9d92-86a5b0deb63a",")
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=e1e69968-9f65-49d3-980b-63a4e4686244",")
+[FINDER] Tool: web_search({"query":"technology adoption grants for small businesses Pennsylvania New Jersey Delaware 2023"})
+[REPORTER] Iteration 2 — 1505ms — stop: tool_use, tools: 1
+[REPORTER] Tool: query_database({"method":"POST","table":"grant_runs","body":{"created_by":"reporter","grants_found":0,"grants_email)
+[LLM] analyst → openrouter/openai/gpt-4o-mini
+[TRACKER] Iteration 5 — 1101ms — stop: tool_use, tools: 1
+[TRACKER] Tool: query_database({"table":"grant_opportunities","method":"GET","params":"deadline=gt.now()"})
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=ebf088fc-bfe2-4ba5-9987-c6c88615411d",")
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=dea94e3b-a907-4bd8-869e-e52ae8481e7a",")
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=e7f5e333-e08a-4a23-9b53-45c24df6bb40",")
+[FINDER] Tool: youtube_search({"query":"K1 Management MBE MWBE grants news 2023","maxResults":5})
+[LLM] reporter → openrouter/google/gemini-2.0-flash-001
+[LLM] tracker → openrouter/openai/gpt-4o-mini
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=92288181-f0a6-40c2-b8d7-cbf01a167858",")
+2026-04-10T17:25:50.263Z - 🚀 [Info] Give Feedback / Get Help: https://dub.composio.dev/discord 
+2026-04-10T17:25:50.263Z - 🐛 [Info] Create a new issue: https://github.com/ComposioHQ/composio/issues 
+2026-04-10T17:25:50.263Z - ⛔ [Info] If you need to debug this error, set env variable COMPOSIO_LOGGING_LEVEL=debug
+[YouTube] Composio search failed, trying direct API: 🔑 Access Denied
+[LLM] finder → openrouter/openai/gpt-4o-mini
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=b5b2b2f9-0e19-4dc1-a84b-d2caff70932e",")
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=733ce810-f6bd-49ad-a1f8-dd18e9c567e5",")
+[ANALYST] Iteration 4 — 8796ms — stop: tool_use, tools: 6
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=eq.fcdb889c-af37-423b-b709-05d43e9d1787)
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=c502449f-ab56-468e-b679-92283fb8d375",")
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=b9a3678e-3a46-4ca9-9d94-6da90d81a62a",")
+[REPORTER] Iteration 3 — 898ms — stop: end_turn, tools: 0
+[REPORTER] Completed in 3 iterations. Actions: 4
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=eq.c4b85ea0-7bb3-4fc5-9d92-86a5b0deb63a)
+[FINDER] Iteration 5 — 1935ms — stop: end_turn, tools: 0
+[FINDER] Completed in 5 iterations. Actions: 17
+[ANALYST] Iteration 2 — 2672ms — stop: end_turn, tools: 0
+[ANALYST] Completed in 2 iterations. Actions: 1
+[TRACKER] Iteration 1 — 1388ms — stop: tool_use, tools: 1
+[TRACKER] Tool: query_database({"table":"grant_opportunities","method":"GET","params":"deadline=lte.now().add(30 days)&status=neq.e)
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=b8194005-8aca-437a-b097-5d937e2b07d9",")
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=659b5e0a-0385-4204-b85b-a5b55caab57f",")
+[TRACKER] Iteration 6 — 889ms — stop: tool_use, tools: 1
+[TRACKER] Tool: query_database({"table":"grant_opportunities","method":"GET","params":"deadline=gte.now()"})
+[OWNER_NONPROFIT] ✅ Cycle complete
+
+[TRACKER] Checking deadlines across all orgs...
+[ANALYST] Tool: query_database({"table":"grant_opportunities","method":"PATCH","params":"id=eq.dea94e3b-a907-4bd8-869e-e52ae8481e7a)
+[FINDER] Iteration 1 — 1537ms — stop: tool_use, tools: 2
+[FINDER] Tool: web_search({"query":"Georgia nonprofit grants community development education social services 2023"})
+[k1_management] Step 2: Analyst scoring eligibility...

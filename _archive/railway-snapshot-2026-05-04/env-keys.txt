@@ -1,0 +1,45 @@
+# Railway Environment Variable Keys — grantiq-bot (production)
+# Snapshot date: 2026-05-04
+# Captured via: railway variables --kv (CLI authenticated as support@levelupautomations.com)
+# All secret values redacted — only key names and public/non-sensitive values preserved.
+
+COMPOSIO_API_KEY=<redacted>
+HOLIGENIX_CAGE=9XZJ9
+HOLIGENIX_UEI=NNR7S596R4K9
+OPENROUTER_API_KEY=<redacted>
+PERPLEXITY_API_KEY=<redacted>
+RAILWAY_ENVIRONMENT=production
+RAILWAY_ENVIRONMENT_ID=61d756e7-dcd6-4d7a-a30b-e68ad16fbabe
+RAILWAY_ENVIRONMENT_NAME=production
+RAILWAY_PRIVATE_DOMAIN=grantiq-bot.railway.internal
+RAILWAY_PROJECT_ID=82648941-bf8f-4d26-9867-318598eb4b3f
+RAILWAY_PROJECT_NAME=grantiq-bot
+RAILWAY_PUBLIC_DOMAIN=grantiq-bot-production.up.railway.app
+RAILWAY_SERVICE_DIRECTOR_OPENCLAW_URL=director-openclaw-production.up.railway.app
+RAILWAY_SERVICE_GRANTIQ_BOT_URL=grantiq-bot-production.up.railway.app
+RAILWAY_SERVICE_ID=b690edd7-89bc-4098-a391-f1229b077242
+RAILWAY_SERVICE_NAME=grantiq-bot
+RAILWAY_STATIC_URL=grantiq-bot-production.up.railway.app
+SUPABASE_KEY=<redacted>
+SUPABASE_SERVICE_ROLE_KEY=<redacted>
+SUPABASE_URL=https://zamokpkpneedvluthsem.supabase.co
+TELEGRAM_BOT_TOKEN=<redacted>
+YOUTUBE_AUTH_KEY=<redacted>
+
+# Total: 22 variables (7 secret/redacted, 15 public/non-sensitive)
+#
+# Keys present (complete list for Vercel migration reference):
+#   COMPOSIO_API_KEY          — Composio integration key
+#   HOLIGENIX_CAGE            — Org identifier (public metadata)
+#   HOLIGENIX_UEI             — Org identifier (public metadata)
+#   OPENROUTER_API_KEY        — LLM routing (primary AI provider)
+#   PERPLEXITY_API_KEY        — Web search for Finder agent
+#   SUPABASE_KEY              — Supabase anon key
+#   SUPABASE_SERVICE_ROLE_KEY — Supabase service role key (elevated privileges)
+#   SUPABASE_URL              — Supabase project URL (non-secret, public endpoint)
+#   TELEGRAM_BOT_TOKEN        — Telegram bot token
+#   YOUTUBE_AUTH_KEY          — YouTube/Composio auth key
+#   RAILWAY_*                 — Railway-injected platform variables (auto-populated on Railway, not needed in Vercel)
+#
+# NOTE: ANTHROPIC_KEY / ANTHROPIC_API_KEY not present in Railway env.
+#       OpenRouter is the sole LLM gateway. Add ANTHROPIC_API_KEY when migrating to Claude SDK on Vercel.

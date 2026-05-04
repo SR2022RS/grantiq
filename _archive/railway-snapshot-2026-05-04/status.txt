@@ -1,0 +1,26 @@
+# Railway Service Status Snapshot — grantiq-bot
+# Snapshot date: 2026-05-04
+# Captured via: railway status (CLI authenticated as support@levelupautomations.com)
+
+Project:     grantiq-bot
+Environment: production
+Service:     grantiq-bot
+
+Project ID:  82648941-bf8f-4d26-9867-318598eb4b3f
+Service ID:  b690edd7-89bc-4098-a391-f1229b077242
+Environment ID: 61d756e7-dcd6-4d7a-a30b-e68ad16fbabe
+
+Public URL:  https://grantiq-bot-production.up.railway.app
+Private domain: grantiq-bot.railway.internal
+Static URL:  grantiq-bot-production.up.railway.app
+
+Additional service referenced in env vars:
+  RAILWAY_SERVICE_DIRECTOR_OPENCLAW_URL=director-openclaw-production.up.railway.app
+  (This service may be a separate Railway deployment or legacy artifact)
+
+# Context notes (for postmortem / migration reference):
+# - Bot has been offline for ~24 days as of snapshot date (last agent activity ~April 10, 2026)
+# - Root cause of 502s: likely port-binding or env var issue (see deploy-logs.txt)
+# - Migration target: Vercel serverless + Claude Agent SDK
+# - No ANTHROPIC_API_KEY present in Railway env — OpenRouter is primary LLM gateway
+# - Supabase project ref: zamokpkpneedvluthsem
