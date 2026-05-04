@@ -11,3 +11,5 @@ data/
 # Test artifacts
 coverage/
 .vitest-cache/
+.vercel
+.env*.local

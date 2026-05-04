@@ -11,33 +11,8 @@
   ],
   "functions": {
     "api/**/*.js": {
-      "runtime": "nodejs20.x",
       "memory": 1024,
       "maxDuration": 60
-    },
-    "api/playwright/start.js": {
-      "runtime": "nodejs20.x",
-      "memory": 2048,
-      "maxDuration": 300
-    },
-    "api/playwright/resume.js": {
-      "runtime": "nodejs20.x",
-      "memory": 2048,
-      "maxDuration": 300
     }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/process-tasks",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/daily-discovery",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/deadline-check",
-      "schedule": "0 */6 * * *"
-    }
-  ]
+  }
 }

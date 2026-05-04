@@ -8,7 +8,6 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "vercel dev",
     "lint": "node --check src/lib/supabase.js && node --check src/lib/anthropic-client.js && node --check src/lib/memory.js",
     "test": "vitest run",
     "test:watch": "vitest",
