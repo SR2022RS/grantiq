@@ -250,6 +250,12 @@ const DOC_NAME_TO_TYPE = {
   "Letter of Support — Government/MCO":    "letter_of_support_government",
   "Letter of Support — Physician/Referral Partner": "letter_of_support_physician",
   "Letter of Support — Physician / Referral Partner": "letter_of_support_physician",
+  "Letter of Support — Government / Municipal Partner": "letter_of_support_government",
+  "Letter of Support — Subcontractor / Industry Partner": "letter_of_support_community",
+  "Letter of Support — Past Performance Reference":      "letter_of_support_physician",
+  "Capability Statement":                  "capability_statement",
+  "Capability Statement (1-page)":         "capability_statement",
+  "CV — Operations Lead":                  "cv_operations_lead",
 };
 
 function templateKindFor(doc) {
