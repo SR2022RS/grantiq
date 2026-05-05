@@ -14,5 +14,10 @@
       "memory": 1024,
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {"path": "/api/cron/process-tasks",   "schedule": "* * * * *"},
+    {"path": "/api/cron/daily-discovery", "schedule": "0 12 * * *"},
+    {"path": "/api/cron/deadline-check",  "schedule": "0 */6 * * *"}
+  ]
 }
