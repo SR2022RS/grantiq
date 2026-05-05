@@ -176,15 +176,119 @@ function SessionsView({ orgFilter, focusSessionId }) {
   );
 }
 
+// Map doc_name → template_kind. Mirrors src/lib/document-catalog.js DOC_TYPE_METADATA.
+// Keep in sync when new doc types are added.
+const TEMPLATE_KIND_BY_NAME = {
+  "Board of Directors / Leadership List": "draftable",
+  "CV — Rodney Williams":                  "draftable",
+  "CV — Yinessa Davis-Cacapit, RN, BSN":   "draftable",
+  "Organizational Chart":                  "draftable",
+  "W-9 Tax Form":                          "draftable",
+  "Letter of Support — Community Partner": "draftable",
+  "Letter of Support — Government / MCO":  "draftable",
+  "Letter of Support — Government/MCO":    "draftable",
+  "Letter of Support — Physician/Referral Partner": "draftable",
+  "Letter of Support — Physician / Referral Partner": "draftable",
+  "Letter of Support — Government / Municipal Partner": "draftable",
+  "Letter of Support — Subcontractor / Industry Partner": "draftable",
+  "Capability Statement":                  "draftable",
+  "IRS 508(c)(1)(a) Determination Letter": "request",
+  "Medicare Certification":                "request",
+  "SDVOSB Certification Letter (SBA)":     "request",
+  "VOSB Certification Letter (SBA)":       "request",
+  "Financial Statements (P&L, Balance Sheet)": "request",
+  "Bank Reference Letter":                 "request",
+  "Indirect Cost Rate Agreement":          "request",
+  "Business Tax Returns (Last 2 Years)":   "request",
+  "Georgia DCH Home Health License":       "gather",
+  "DE Home Health License":                "gather",
+  "EVV Compliance Report (HHAeXchange)":   "gather",
+  "SAM.gov Registration Verification":     "gather",
+};
+
+// Map vault doc_name → catalog doc_type. Some vault rows have human names that
+// don't match the catalog keys directly.
+const DOC_NAME_TO_TYPE = {
+  "Board of Directors / Leadership List": "board_list",
+  "CV — Rodney Williams":                  "cv_operations_lead",
+  "CV — Yinessa Davis-Cacapit, RN, BSN":   "cv_clinical_director",
+  "Organizational Chart":                  "org_chart",
+  "W-9 Tax Form":                          "w9",
+  "Letter of Support — Community Partner": "letter_of_support_community",
+  "Letter of Support — Government / MCO":  "letter_of_support_government",
+  "Letter of Support — Government/MCO":    "letter_of_support_government",
+  "Letter of Support — Physician/Referral Partner": "letter_of_support_physician",
+  "Letter of Support — Physician / Referral Partner": "letter_of_support_physician",
+};
+
+function templateKindFor(doc) {
+  return TEMPLATE_KIND_BY_NAME[doc.doc_name] || null;
+}
+
 function VaultView({ orgFilter, onSetOrg, onNav }) {
   const { VAULT, ORGS, REQUIREMENTS, GRANTS } = window.MOCK;
   const { fmtDate, daysUntil, readinessClass, readinessColor } = window.Helpers;
   const I = window.IconSet;
+  const [draftingId, setDraftingId] = React.useState(null);
+  const [generatingPack, setGeneratingPack] = React.useState(false);
+  const [draftPreview, setDraftPreview] = React.useState(null); // {doc_name, content}
 
   // Vault is org-specific — if "all", default to k1 (most active per PRD)
   const activeOrgId = orgFilter === "all" ? "k1_management" : orgFilter;
   const org = ORGS.find(o => o.id === activeOrgId);
   const docs = VAULT.filter(v => v.org_id === activeOrgId);
+
+  async function draftDocument(doc) {
+    const docType = DOC_NAME_TO_TYPE[doc.doc_name];
+    if (!docType) {
+      alert("This document doesn't have an AI template yet. (Add one at workspace/templates/" + activeOrgId + "/<doc_type>.md)");
+      return;
+    }
+    setDraftingId(doc.id);
+    try {
+      const r = await fetch('/api/orgs/draft-doc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ org_id: activeOrgId, doc_type: docType }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        alert("Draft failed: " + (j.error || r.status));
+      } else {
+        setDraftPreview({ doc_name: doc.doc_name, content: j.draft_content || '', kind: j.template_kind });
+      }
+    } catch (e) {
+      alert("Network error: " + e.message);
+    } finally {
+      setDraftingId(null);
+    }
+  }
+
+  function downloadReadinessPack() {
+    setGeneratingPack(true);
+    const url = `/api/orgs/readiness-pack?org_id=${encodeURIComponent(activeOrgId)}`;
+    // Trigger download via hidden link
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => setGeneratingPack(false), 1500);
+  }
+
+  function downloadDraftAsFile() {
+    if (!draftPreview) return;
+    const blob = new Blob([draftPreview.content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = draftPreview.doc_name.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_') + '.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 
   // Compute fan-out: how many active grants does each doc unblock?
   const grantsForOrg = GRANTS.filter(g => g.org_id === activeOrgId && ["new","reviewing","drafting"].includes(g.status));
@@ -229,6 +333,9 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
               <button key={o.id} className={o.id === activeOrgId ? "active" : ""} onClick={() => onSetOrg(o.id)}>{o.short}</button>
             ))}
           </div>
+          <button className="btn btn-primary" onClick={downloadReadinessPack} disabled={generatingPack}>
+            <span>{I.spark}</span> {generatingPack ? "Building…" : "Generate Readiness Pack"}
+          </button>
           <button className="btn"><span>{I.upload}</span> Download all (ZIP)</button>
         </div>
       </div>
@@ -299,6 +406,28 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
         </div>
       )}
 
+      {draftPreview && (
+        <div className="modal-overlay" onClick={() => setDraftPreview(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-head">
+              <div>
+                <h3>{draftPreview.doc_name}</h3>
+                <div className="muted" style={{fontSize: 11.5}}>
+                  {draftPreview.kind === "draftable" && "AI-drafted starter · fill [BRACKETED PLACEHOLDERS], save as PDF, upload"}
+                  {draftPreview.kind === "request" && "Email/message template · send to issuing party, then upload their reply"}
+                  {draftPreview.kind === "gather" && "Where to find this · log in, export, save, upload"}
+                </div>
+              </div>
+              <div style={{display:"flex", gap:6}}>
+                <button className="btn btn-primary btn-sm" onClick={downloadDraftAsFile}>Download .md</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setDraftPreview(null)}>Close</button>
+              </div>
+            </div>
+            <pre className="draft-preview">{draftPreview.content}</pre>
+          </div>
+        </div>
+      )}
+
       {groups.map(grp => {
         const items = docs.filter(d => d.required_for === grp.key);
         if (!items.length) return null;
@@ -325,15 +454,53 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
                         </div>
                       )}
                     </div>
-                    <div style={{display:"flex", gap:6}}>
+                    <div style={{display:"flex", gap:6, alignItems:"center"}}>
                       {d.status === "uploaded" ? (
                         <>
                           <button className="btn btn-ghost btn-sm">View</button>
                           <button className="btn btn-ghost btn-sm">Replace</button>
                         </>
-                      ) : (
-                        <button className="btn btn-primary btn-sm">Upload</button>
-                      )}
+                      ) : (() => {
+                        const kind = templateKindFor(d);
+                        if (kind === "draftable") {
+                          return (
+                            <>
+                              <span className="kind-pill kind-draftable">Draftable</span>
+                              <button
+                                className="btn btn-primary btn-sm"
+                                onClick={() => draftDocument(d)}
+                                disabled={draftingId === d.id}
+                              >
+                                {draftingId === d.id ? "Drafting…" : "Draft with AI"}
+                              </button>
+                              <button className="btn btn-ghost btn-sm">Upload</button>
+                            </>
+                          );
+                        }
+                        if (kind === "request") {
+                          return (
+                            <>
+                              <span className="kind-pill kind-request">Request</span>
+                              <button className="btn btn-sm" onClick={() => draftDocument(d)} disabled={draftingId === d.id}>
+                                {draftingId === d.id ? "…" : "Get email template"}
+                              </button>
+                              <button className="btn btn-ghost btn-sm">Upload</button>
+                            </>
+                          );
+                        }
+                        if (kind === "gather") {
+                          return (
+                            <>
+                              <span className="kind-pill kind-gather">Gather</span>
+                              <button className="btn btn-sm" onClick={() => draftDocument(d)} disabled={draftingId === d.id}>
+                                {draftingId === d.id ? "…" : "Where to find"}
+                              </button>
+                              <button className="btn btn-ghost btn-sm">Upload</button>
+                            </>
+                          );
+                        }
+                        return <button className="btn btn-primary btn-sm">Upload</button>;
+                      })()}
                     </div>
                   </div>
                 );

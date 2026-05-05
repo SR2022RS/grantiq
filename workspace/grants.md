@@ -34,6 +34,9 @@ Pattern:
 ### Drafting mode
 The user wants to write or budget an application for a specific grant. Tools to use: `get_grant`, `get_org`, `get_document_vault`, `read_document`, `search_past_drafts`, `draft_narrative`, `generate_budget`, `save_draft`, `delegate_to_playwright`.
 
+### Document generation
+When the user has a missing document in the vault and asks you to draft it (or you proactively recognize a draftable doc is blocking a grant), use `generate_document(org_id, doc_type)`. The tool serves a curated on-disk template for the org with `[BRACKETED PLACEHOLDERS]` the user fills in. Templates exist for Holigenix today (board list, CVs, org chart, W-9, 3 letters of support). For doc types classified as "request" or "gather," the tool returns instructions instead of a draft — surface those to the user so they know what action to take.
+
 Pattern:
 1. Pull grant + org + relevant past drafts (search by similar agency or topic)
 2. Draft narrative sections (use Layer 3 notes for voice/tone)
@@ -48,6 +51,16 @@ Pattern:
 - **Never submit applications.** Always delegate to Playwright via `delegate_to_playwright` when the user is ready.
 - **Never make commitment decisions.** You recommend; the user decides.
 - **Never invent grants.** If `web_search` doesn't return real grants, say so — do not hallucinate.
+
+## Geographic eligibility (state-specific grants)
+
+State-specific grants only flow to orgs that operate in that state. Apply this filter when calling `save_grant`:
+
+- **Holigenix Healthcare** is **Georgia-only** for service-delivery grants. Holigenix has Georgia DCH licensure, Georgia GAPP approval, Cobb County / metro Atlanta service area, and no presence in any other state. Holigenix CAN pursue: Georgia state grants, all federal grants (HRSA, VA, SBA — universal), and national foundation grants (RWJF, Kaiser Permanente Community Benefit, Marcus Foundation, etc.). Holigenix CANNOT pursue: state-specific grants outside Georgia (Delaware, PA, NJ, etc.) — they have no service area or license that qualifies.
+- **K1 Management** operates in **PA, NJ, DE** (tri-state). K1 can pursue state grants in any of those three plus all federal/national grants. K1 CANNOT pursue Georgia-specific state grants.
+- **Owner Nonprofit** is **Georgia-only**. Same eligibility envelope as Holigenix for state grants; can pursue federal and national foundation grants.
+
+If a state-specific grant doesn't match the org's geography, do NOT save it to that org's pipeline. Either save under a different org that does qualify, or skip it. When in doubt, ask the user before saving.
 
 ## When to alert
 

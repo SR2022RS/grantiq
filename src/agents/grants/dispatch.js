@@ -29,6 +29,7 @@ const TOOL_FUNCTIONS = {
   read_document: g.readDocument,
   get_draft: g.getDraft,
   delegate_to_playwright: g.delegateToPlaywright,
+  generate_document: g.generateDocument,
   record_note: recordNote,
   alert_user: alertUser,
 };
@@ -51,6 +52,7 @@ export const GRANTS_TOOL_SCHEMAS = [
   g.readDocumentSchema,
   g.getDraftSchema,
   g.delegateToPlaywrightSchema,
+  g.generateDocumentSchema,
   recordNoteSchema,
   alertUserSchema,
 ];

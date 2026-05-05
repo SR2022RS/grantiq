@@ -15,3 +15,4 @@ export * from './get-document-vault.js';
 export * from './read-document.js';
 export * from './get-draft.js';
 export * from './delegate-to-playwright.js';
+export * from './generate-document.js';
