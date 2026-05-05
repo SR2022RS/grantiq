@@ -1,16 +1,23 @@
 {
-  "version": 2,
-  "builds": [
-    {"src": "dashboard/**/*.html", "use": "@vercel/static"},
-    {"src": "api/*.js", "use": "@vercel/node"}
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": null,
+  "framework": null,
+  "outputDirectory": "public",
+  "rewrites": [
+    {"source": "/k1-upload", "destination": "/k1-upload.html"},
+    {"source": "/k1", "destination": "/k1-upload.html"},
+    {"source": "/holigenix-upload", "destination": "/holigenix-upload.html"},
+    {"source": "/holigenix", "destination": "/holigenix-upload.html"}
   ],
-  "routes": [
-    {"src": "/api/download", "dest": "/api/download.js"},
-    {"src": "/api/zip", "dest": "/api/zip.js"},
-    {"src": "/k1-upload", "dest": "/dashboard/k1-upload.html"},
-    {"src": "/k1", "dest": "/dashboard/k1-upload.html"},
-    {"src": "/holigenix-upload", "dest": "/dashboard/holigenix-upload.html"},
-    {"src": "/holigenix", "dest": "/dashboard/holigenix-upload.html"},
-    {"src": "/(.*)", "dest": "/dashboard/index.html"}
+  "functions": {
+    "api/**/*.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "crons": [
+    {"path": "/api/cron/process-tasks",   "schedule": "* * * * *"},
+    {"path": "/api/cron/daily-discovery", "schedule": "0 12 * * *"},
+    {"path": "/api/cron/deadline-check",  "schedule": "0 */6 * * *"}
   ]
 }

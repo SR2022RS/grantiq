@@ -1,8 +1,15 @@
 node_modules/
 .env
 .env.local
+.env.*.local
 data/
 *.log
 .DS_Store
 .claude/
+.vercel/
+
+# Test artifacts
+coverage/
+.vitest-cache/
 .vercel
+.env*.local

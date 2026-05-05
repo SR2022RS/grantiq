@@ -1,19 +1,26 @@
 {
-  "name": "grantiq-bot",
-  "version": "1.0.0",
-  "description": "GrantIQ — Autonomous AI Grant Research & Application Agent (Telegram + Claude + Composio)",
-  "main": "index.js",
+  "name": "grantiq-vercel",
+  "version": "2.0.0",
+  "description": "GrantIQ — AI grant research + application agents on Vercel",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "start": "node index.js"
+    "lint": "node --check src/lib/supabase.js && node --check src/lib/anthropic-client.js && node --check src/lib/memory.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
-    "archiver": "^7.0.1",
-    "composio-core": "^0.5.39",
-    "dotenv": "^16.4.7",
-    "express": "^5.2.1",
-    "node-cron": "^3.0.3",
-    "node-telegram-bot-api": "^0.66.0",
-    "nodemailer": "^6.9.16",
-    "youtube-transcript": "^1.2.1"
+    "@anthropic-ai/sdk": "^0.90.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "playwright-core": "^1.50.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "vercel": "^48.0.0",
+    "vitest": "^2.1.0"
   }
 }
