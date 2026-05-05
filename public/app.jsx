@@ -137,6 +137,21 @@ function App() {
           <span className="pulse-dot" />
           {liveAgents > 0 ? `${liveAgents} agent task${liveAgents===1?"":"s"} live` : "agents idle"}
         </div>
+        <div
+          className={"data-status data-status-" + dataStatus}
+          title={
+            dataStatus === "live"    ? "Showing live Supabase + API data" :
+            dataStatus === "loading" ? "Loading live data…" :
+            dataStatus === "error"   ? "Live data fetch failed — showing demo mocks. Check console." :
+            "Demo data (mocks)"
+          }
+        >
+          <span className="data-status-dot" />
+          {dataStatus === "live"    ? "live"    :
+           dataStatus === "loading" ? "loading" :
+           dataStatus === "error"   ? "mock (offline)" :
+           "mock"}
+        </div>
       </header>
 
       <aside className="sidebar">
