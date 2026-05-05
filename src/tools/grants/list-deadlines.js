@@ -18,7 +18,7 @@ export async function listDeadlines({ org_id, days = 30 }) {
   const cutoff = new Date(Date.now() + days * 86400_000).toISOString();
   const { data, error } = await supabase
     .from('grant_opportunities')
-    .select('id, name, agency, deadline, match_score, status')
+    .select('id, name, funder, deadline, match_score, status')
     .eq('org_id', org_id)
     .not('deadline', 'is', null)
     .lte('deadline', cutoff)

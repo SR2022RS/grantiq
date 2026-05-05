@@ -19,7 +19,7 @@ export async function queryPipeline({ org_id, status, min_match, deadline_within
   const supabase = getSupabase();
   let q = supabase
     .from('grant_opportunities')
-    .select('id, name, agency, amount, deadline, match_score, status, url, created_at')
+    .select('id, name, funder, amount, deadline, match_score, status, url, created_at')
     .order('match_score', { ascending: false, nullsFirst: false })
     .limit(limit);
   if (org_id) q = q.eq('org_id', org_id);

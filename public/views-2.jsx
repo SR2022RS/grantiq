@@ -78,8 +78,31 @@ function SessionsView({ orgFilter, focusSessionId }) {
   const list = SESSIONS.filter(s => inOrg(s.org_id));
   const initial = focusSessionId || list.find(s => s.status === "gated")?.id || list[0]?.id;
   const [selected, setSelected] = useState2(initial);
+  const [resuming, setResuming] = useState2(null); // session_id being resumed
   const session = list.find(s => s.id === selected);
   const grant = session ? GRANTS.find(g => g.id === session.grant_id) : null;
+
+  async function resumeSession(sessionId, action) {
+    if (!sessionId || resuming) return;
+    setResuming(sessionId);
+    try {
+      const r = await fetch("/api/playwright/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, user_action: action || "approved" }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        alert("Resume failed: " + (j.error || r.status));
+      } else {
+        alert(j.message || "Session resumed. Refresh to see updated status.");
+      }
+    } catch (e) {
+      alert("Network error: " + e.message);
+    } finally {
+      setResuming(null);
+    }
+  }
 
   return (
     <div>
@@ -127,8 +150,16 @@ function SessionsView({ orgFilter, focusSessionId }) {
               <div className="actions">
                 {session.status === "gated" && (
                   <>
-                    <button className="btn btn-danger btn-sm">Cancel</button>
-                    <button className="btn btn-primary">Approve & Resume</button>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => resumeSession(session.id, "cancel")}
+                      disabled={resuming === session.id}
+                    >Cancel</button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => resumeSession(session.id, "approved")}
+                      disabled={resuming === session.id}
+                    >{resuming === session.id ? "Resuming…" : "Approve & Resume"}</button>
                   </>
                 )}
                 {session.status === "in_progress" && <button className="btn btn-sm">Pause</button>}

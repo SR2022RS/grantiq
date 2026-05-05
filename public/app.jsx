@@ -17,6 +17,43 @@ function App() {
   const [orgFilter, setOrgFilter] = useStateApp("all");
   const [navCtx, setNavCtx]       = useStateApp({});
   const [tweaks, setTweak]        = window.useTweaks(TWEAK_DEFAULTS);
+  const [dataReload, setDataReload] = useStateApp(0);
+  const [dataStatus, setDataStatus] = useStateApp("mock"); // "mock" | "loading" | "live" | "error"
+
+  // Bootstrap: on mount, fetch live data from Supabase + APIs and mutate
+  // window.MOCK in place. Then bump dataReload to force a re-render so all
+  // child views pick up the new data.
+  useEffectApp(() => {
+    if (!window.loadLiveData) return;
+    setDataStatus("loading");
+    window.loadLiveData()
+      .then((live) => {
+        // Replace top-level arrays in window.MOCK with live data; keep
+        // mocked tables (FUNDERS, WATCHLISTS, etc.) untouched.
+        Object.assign(window.MOCK, live);
+        setDataStatus("live");
+        setDataReload((n) => n + 1);
+      })
+      .catch((e) => {
+        console.error("[live-data] load failed, staying on mocks:", e);
+        setDataStatus("error");
+      });
+  }, []);
+
+  // Alerts + sessions polling — refresh every 30s so the user sees new alerts
+  // and Playwright session status changes without manual refresh.
+  useEffectApp(() => {
+    if (!window.loadLiveData) return;
+    const id = setInterval(() => {
+      window.loadLiveData()
+        .then((live) => {
+          Object.assign(window.MOCK, live);
+          setDataReload((n) => n + 1);
+        })
+        .catch(() => { /* keep last good state */ });
+    }, 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Apply density + accent hue tweaks to root
   useEffectApp(() => {

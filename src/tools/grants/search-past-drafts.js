@@ -18,7 +18,7 @@ export async function searchPastDrafts({ query, org_id, limit = 5 }) {
   const supabase = getSupabase();
   let q = supabase
     .from('application_drafts')
-    .select('id, grant_id, status, narrative, created_at, grant_opportunities(name, agency)')
+    .select('id, grant_id, status, narrative, created_at, grant_opportunities(name, funder)')
     .order('created_at', { ascending: false })
     .limit(limit * 4);
   if (org_id) q = q.eq('org_id', org_id);

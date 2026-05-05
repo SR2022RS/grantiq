@@ -6,48 +6,101 @@ function ChatView() {
   const { md, relTime } = window.Helpers;
   const I = window.IconSet;
 
-  const [history, setHistory] = useState3(CHAT_HISTORY);
+  // Real conversation persistence — id stored in localStorage so chat survives reloads
+  const [convId, setConvId] = useState3(() => localStorage.getItem("grantiq_conv_id") || null);
+  const [history, setHistory] = useState3([]);
   const [input, setInput] = useState3("");
   const [thinking, setThinking] = useState3(false);
   const [iter, setIter] = useState3(0);
+  const [conversations, setConversations] = useState3([]);
   const streamRef = useRef3(null);
+
+  // Fetch conversation list once + active conversation history if we have an id
+  useEffect3(() => {
+    fetch("/api/grants/conversations?user_chat_id=rodney")
+      .then(r => r.ok ? r.json() : { conversations: [] })
+      .then(d => {
+        const list = (d.conversations || []).map((c, i) => ({
+          id: c.id,
+          title: i === 0 ? "Active conversation" : "Earlier — " + new Date(c.last_message_at).toLocaleDateString(),
+          when: relTime(c.last_message_at),
+          active: c.id === convId,
+        }));
+        setConversations(list);
+      })
+      .catch(() => { /* fall back to empty */ });
+  }, [convId]);
 
   useEffect3(() => {
     if (streamRef.current) streamRef.current.scrollTop = streamRef.current.scrollHeight;
   }, [history, thinking]);
 
-  const send = () => {
+  const send = async () => {
     if (!input.trim() || thinking) return;
-    const userMsg = { id: "u" + Date.now(), role: "user", text: input };
+    const userText = input;
+    const userMsg = { id: "u" + Date.now(), role: "user", text: userText };
     setHistory(h => [...h, userMsg]);
     setInput("");
     setThinking(true);
     setIter(1);
 
-    // Simulated agent response with iteration counter
-    const steps = [
-      () => setIter(2),
-      () => setIter(3),
-      () => {
+    try {
+      const r = await fetch("/api/grants/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userText,
+          conversation_id: convId,
+          user_chat_id: "rodney",
+        }),
+      });
+      const j = await r.json();
+
+      if (!r.ok) {
         setHistory(h => [...h, {
-          id: "a" + Date.now(), role: "assistant", text: "Looking into that.",
-          blocks: [
-            { kind: "tool", tool: "search_grants", args: { query: input.slice(0, 40) }, result: "Returned 4 candidate matches. Top results below." },
-            { kind: "markdown", body: "I queued a draft for the highest-match candidate. Watch your **Inbox** for the review handoff in ~6 minutes." },
-          ]
+          id: "e" + Date.now(),
+          role: "assistant",
+          text: `Error ${r.status}: ${j.error || "unknown"}`,
+          blocks: [],
         }]);
-        setThinking(false);
+      } else {
+        // Persist conversation_id for next message
+        if (j.conversation_id && j.conversation_id !== convId) {
+          setConvId(j.conversation_id);
+          localStorage.setItem("grantiq_conv_id", j.conversation_id);
+        }
+        // Build display blocks from telemetry tools_invoked
+        const blocks = (j.telemetry?.tools_invoked || []).map(t => ({
+          kind: "tool",
+          tool: t.name,
+          args: t.input || {},
+          result: t.error ? `Error: ${t.error}` : `ok · ${t.latency_ms}ms`,
+        }));
+        setHistory(h => [...h, {
+          id: "a" + Date.now(),
+          role: "assistant",
+          text: j.text || "(no response text)",
+          blocks,
+        }]);
+        setIter(j.telemetry?.iterations || 1);
       }
-    ];
-    steps.forEach((s, i) => setTimeout(s, (i + 1) * 700));
+    } catch (e) {
+      setHistory(h => [...h, {
+        id: "e" + Date.now(),
+        role: "assistant",
+        text: "Network error: " + e.message,
+        blocks: [],
+      }]);
+    } finally {
+      setThinking(false);
+    }
   };
 
-  const conversations = [
-    { id: "c1", title: "Best K1 closes this month", when: "just now",  active: true },
-    { id: "c2", title: "Holigenix EVV evidence package", when: "yesterday" },
-    { id: "c3", title: "RWJF brief 248-word draft",   when: "2d ago" },
-    { id: "c4", title: "MBDA federal procurement",    when: "3d ago" },
-  ];
+  const newConversation = () => {
+    setConvId(null);
+    localStorage.removeItem("grantiq_conv_id");
+    setHistory([]);
+  };
 
   return (
     <div>
@@ -57,7 +110,7 @@ function ChatView() {
           <div className="sub">Grants Agent · model claude-sonnet · persistent history per <span className="mono">user_chat_id=rodney</span></div>
         </div>
         <div className="actions">
-          <button className="btn btn-sm">New conversation</button>
+          <button className="btn btn-sm" onClick={newConversation}>New conversation</button>
         </div>
       </div>
 
