@@ -165,6 +165,7 @@ function InboxView({ orgFilter, onNav }) {
 }
 
 function PipelineView({ orgFilter, focusGrantId, onNav }) {
+  const [showAddGrant, setShowAddGrant] = React.useState(false);
   const { GRANTS } = window.MOCK;
   const { matchClass, fmtShortDate, daysUntil, orgShort } = window.Helpers;
   const I = window.IconSet;
@@ -205,9 +206,23 @@ function PipelineView({ orgFilter, focusGrantId, onNav }) {
         </div>
         <div className="actions">
           <button className="btn"><span>{I.search}</span> Run discovery</button>
-          <button className="btn btn-primary"><span>{I.spark}</span> Score new</button>
+          <button className="btn btn-primary" onClick={() => setShowAddGrant(true)}>+ Add grant</button>
         </div>
       </div>
+
+      {showAddGrant && (
+        <window.AddGrantModal
+          defaultOrgId={orgFilter}
+          onClose={() => setShowAddGrant(false)}
+          onCreated={(j) => {
+            setShowAddGrant(false);
+            // Refresh live data so the new grant appears
+            if (window.loadLiveData) {
+              window.loadLiveData().then(live => Object.assign(window.MOCK, live)).catch(() => {});
+            }
+          }}
+        />
+      )}
 
       <div className="filterbar">
         <div className="group">

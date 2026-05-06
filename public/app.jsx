@@ -81,7 +81,7 @@ function App() {
     vault:    VAULT.filter(v => v.status === "missing").length,
   };
 
-  const pageTitle = ({inbox:"Inbox", pipeline:"Pipeline", grant:"Grant detail", drafts:"Drafts", sessions:"Sessions", calendar:"Calendar", vault:"Vault", templates:"Templates", sources:"Sources", watchlists:"Watchlists", dismissed:"Dismissed", funders:"Funders", submissions:"Submissions", chat:"Chat", notes:"Notes", settings:"Settings"})[page];
+  const pageTitle = ({inbox:"Inbox", pipeline:"Pipeline", grant:"Grant detail", drafts:"Drafts", sessions:"Sessions", calendar:"Calendar", brief:"Project Brief", kb:"Knowledge Base", vault:"Vault", templates:"Templates", sources:"Sources", watchlists:"Watchlists", dismissed:"Dismissed", funders:"Funders", submissions:"Submissions", chat:"Chat", notes:"Notes", settings:"Settings"})[page];
 
   const showRail = tweaks.showRightRail && ["inbox","pipeline","drafts","vault","notes","settings","calendar","sources","funders"].includes(page);
   const liveAgents = AGENT_ACTIVITY.filter(a => Date.now() - new Date(a.t).getTime() < 30 * 60 * 1000).length;
@@ -220,6 +220,8 @@ function App() {
         </div>
         <div className="nav-group">
           <div className="label">Documents</div>
+          <NavItem id="brief"     label="Brief"     icon={I.notes} page={page} onNav={onNav} />
+          <NavItem id="kb"        label="Knowledge" icon={I.notes} page={page} onNav={onNav} />
           <NavItem id="vault"     label="Vault"     icon={I.vault} badge={counts.vault}   page={page} onNav={onNav} muted />
           <NavItem id="templates" label="Templates" icon={I.notes} page={page} onNav={onNav} />
         </div>
@@ -274,6 +276,8 @@ function App() {
           {page === "drafts"   && <window.DraftsView   orgFilter={orgFilter} focusDraftId={navCtx.draftId} onNav={onNav} />}
           {page === "sessions" && <window.SessionsView orgFilter={orgFilter} focusSessionId={navCtx.sessionId} />}
           {page === "calendar" && <window.CalendarView orgFilter={orgFilter} onNav={onNav} />}
+          {page === "brief"    && <window.BriefView    orgFilter={orgFilter} />}
+          {page === "kb"       && <window.KBView       orgFilter={orgFilter} />}
           {page === "vault"    && <window.VaultView    orgFilter={orgFilter} onSetOrg={setOrgFilter} onNav={onNav} />}
           {page === "templates"&& <window.TemplatesView orgFilter={orgFilter} />}
           {page === "sources"  && <window.SourcesView  orgFilter={orgFilter} />}
