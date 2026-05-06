@@ -222,13 +222,43 @@ function BriefView({ orgFilter }) {
         </section>
       )}
 
-      {/* ─── Target population ────────────────────────────────────────── */}
-      <ListBlock label="Target population" items={brief.target_population || []}
-        editing={editing}
-        onSet={(i, v) => listSet("target_population", i, v)}
-        onAdd={() => listAdd("target_population")}
-        onRemove={(i) => listRemove("target_population", i)}
-        placeholder="Youth & Young Adults (16-24)" />
+      {/* ─── Target population — detailed cards if present, otherwise flat list ─── */}
+      {(brief.target_population_detail || []).length > 0 && !editing ? (
+        <section className="brief-section">
+          <h3>Who we serve</h3>
+          <div className="population-grid">
+            {brief.target_population_detail.map((p, i) => (
+              <div key={i} className={"population-card pop-" + (p.color || "blue")}>
+                <div className="pop-group">{p.group}</div>
+                {p.sub && <div className="pop-sub">{p.sub}</div>}
+                <div className="pop-body">{p.body}</div>
+                <ul className="pop-items">
+                  {(p.items || []).map((it, j) => <li key={j}>{it}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <ListBlock label="Target population" items={brief.target_population || []}
+          editing={editing}
+          onSet={(i, v) => listSet("target_population", i, v)}
+          onAdd={() => listAdd("target_population")}
+          onRemove={(i) => listRemove("target_population", i)}
+          placeholder="Youth & Young Adults (16-24)" />
+      )}
+
+      {/* ─── Students Have Built (tag cloud) ─────────────────────────── */}
+      {(brief.students_have_built || []).length > 0 && !editing && (
+        <section className="brief-section">
+          <h3>Students have built</h3>
+          <div className="tag-cloud">
+            {brief.students_have_built.map((t, i) => (
+              <span key={i} className="tag-chip">{t}</span>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ─── Why us ──────────────────────────────────────────────────── */}
       <section className="brief-section">

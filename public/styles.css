@@ -1995,3 +1995,56 @@ body.org-all       { --org-accent: var(--text-2);        --org-accent-bg: var(--
   border: 1px solid var(--accent-bg-2, rgba(245, 165, 36, 0.20));
   border-radius: 8px;
 }
+
+/* ─── Brief — populations + tag cloud ──────────────────────────────────── */
+.population-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.population-card {
+  background: var(--bg-1, #0e1014);
+  border: 1px solid var(--line, #1c1f27);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.population-card.pop-blue { border-top: 3px solid oklch(0.65 0.18 240); }
+.population-card.pop-red  { border-top: 3px solid oklch(0.65 0.20 27);  }
+.pop-group {
+  font-size: 14px; font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.population-card.pop-blue .pop-group { color: oklch(0.78 0.16 240); }
+.population-card.pop-red  .pop-group { color: oklch(0.74 0.20 27);  }
+.pop-sub {
+  font-size: 11px; color: var(--text-3, #9ca3af);
+  font-style: italic; margin-top: 2px;
+}
+.pop-body {
+  font-size: 12px; line-height: 1.55;
+  color: var(--text-2, #c5c5c8);
+  margin-top: 10px;
+}
+.pop-items { list-style: none; padding: 8px 0 0; margin: 0; }
+.pop-items li {
+  font-size: 12px; line-height: 1.5;
+  padding: 3px 0 3px 14px;
+  position: relative;
+  color: var(--text-2, #c5c5c8);
+}
+.pop-items li::before {
+  content: ""; position: absolute; left: 2px; top: 9px;
+  width: 4px; height: 4px;
+  background: var(--accent, #f5a524);
+  border-radius: 1px;
+}
+
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-chip {
+  font-size: 11.5px; font-weight: 500;
+  padding: 4px 10px;
+  background: var(--bg-1, #0e1014);
+  border: 1px solid var(--line, #1c1f27);
+  border-radius: 999px;
+  color: var(--text-2, #c5c5c8);
+  font-family: var(--font-mono, monospace);
+}
