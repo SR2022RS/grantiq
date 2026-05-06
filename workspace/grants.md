@@ -31,6 +31,13 @@ Pattern:
 4. Save promising grants to the pipeline (`save_grant` with status='new')
 5. Summarize top matches to the user with: name, agency, amount, deadline, match score, one-sentence rationale
 
+**Deadline extraction is mandatory.** Before calling `save_grant`, you MUST attempt to extract a deadline from the source page (use `fetch_webpage` if the search snippet doesn't give one). Acceptable deadline values:
+
+- An ISO date `YYYY-MM-DD` (e.g., 2026-08-15) — preferred
+- `null` ONLY if the funder explicitly states "rolling" or "no deadline" — and in that case set `description` to include "Rolling — applies year-round"
+
+Do NOT save a grant with `deadline: null` unless you have evidence the funding is rolling. A missing deadline silently disappears from the Calendar view; the user has no way to track it. If you can't find one, either keep researching or surface it to the user with the source URL so they can verify manually.
+
 ### Drafting mode
 The user wants to write or budget an application for a specific grant. Tools to use: `get_grant`, `get_org`, `get_document_vault`, `read_document`, `search_past_drafts`, `draft_narrative`, `generate_budget`, `save_draft`, `delegate_to_playwright`.
 

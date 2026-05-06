@@ -6,11 +6,18 @@ function CalendarView({ orgFilter, onNav }) {
   const { daysUntil, fmtShortDate, matchClass, orgShort } = window.Helpers;
 
   const inOrg = (id) => orgFilter === "all" || id === orgFilter;
-  const upcoming = GRANTS.filter(g => inOrg(g.org_id) && g.status !== "rejected" && daysUntil(g.deadline) >= -7)
+  // Active grants for the active org. Split into deadline-known vs TBD so
+  // unknown deadlines don't silently vanish from the page.
+  const activeGrants = GRANTS.filter(g => inOrg(g.org_id) && g.status !== "rejected" && g.status !== "expired" && g.status !== "skipped");
+  const upcoming = activeGrants
+    .filter(g => g.deadline && daysUntil(g.deadline) >= -7)
     .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+  const tbdGrants = activeGrants.filter(g => !g.deadline);
 
-  // Build a 90-day timeline starting today
-  const today = new Date("2026-05-04T00:00:00Z");
+  // Build a 90-day timeline starting today (real today — not hardcoded).
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const today = new Date(todayStr + "T00:00:00Z");
+  const todayLabel = today.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const days = 90;
   const weeks = Math.ceil(days / 7);
 
@@ -31,12 +38,13 @@ function CalendarView({ orgFilter, onNav }) {
     return d >= -7 && d <= days;
   });
 
-  // KPIs
+  // KPIs — guard against amount being null/undefined for manually-added grants
+  const parseAmt = (a) => parseInt(String(a || "").replace(/\D/g,""), 10) || 0;
   const kpis = {
     next7: list.filter(g => daysUntil(g.deadline) <= 7 && daysUntil(g.deadline) >= 0).length,
     next30: list.filter(g => daysUntil(g.deadline) <= 30 && daysUntil(g.deadline) >= 0).length,
     next90: list.length,
-    totalAmt: list.reduce((sum, g) => sum + (parseInt(g.amount.replace(/\D/g,""))||0), 0),
+    totalAmt: list.reduce((sum, g) => sum + parseAmt(g.amount), 0),
   };
 
   return (
@@ -56,7 +64,7 @@ function CalendarView({ orgFilter, onNav }) {
       </div>
 
       <div className="card">
-        <div className="card-head"><h3>Next 90 days</h3><span className="meta">starting today, May 4</span></div>
+        <div className="card-head"><h3>Next 90 days</h3><span className="meta">starting today, {todayLabel}</span></div>
         <div className="timeline">
           <div className="tl-axis">
             {weekRows.map((w, i) => <div key={i} className="tl-week">{w.label}</div>)}
@@ -85,9 +93,34 @@ function CalendarView({ orgFilter, onNav }) {
                 </div>
               );
             })}
+            {list.length === 0 && (
+              <div className="tl-empty">
+                {activeGrants.length === 0
+                  ? "No active grants for this org. Use Pipeline → + Add grant to add one manually."
+                  : `${activeGrants.length} active grant${activeGrants.length === 1 ? "" : "s"} — but no deadlines parsed yet. See "Deadline TBD" below.`}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {tbdGrants.length > 0 && (
+        <div className="card" style={{marginTop:14}}>
+          <div className="card-head">
+            <h3>Deadline TBD <span className="count">{tbdGrants.length}</span></h3>
+            <span className="meta">grants without a parsed deadline — open to fill in</span>
+          </div>
+          <div className="tbd-list">
+            {tbdGrants.map(g => (
+              <div key={g.id} className="tbd-row" onClick={() => onNav("grant", { grantId: g.id })}>
+                <span className={"match-dot " + matchClass(g.match_score)} />
+                <span className="tbd-name">{g.name}</span>
+                <span className="tbd-meta">{orgShort(g.org_id)} · {g.amount || "amount TBD"}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
