@@ -166,7 +166,11 @@ function Message({ m }) {
     <div className={"msg " + m.role}>
       <div className="who">{m.role === "user" ? "Rodney" : "Grants Agent"}</div>
       <div className="bubble">
-        <div>{m.text}</div>
+        {m.text && (
+          m.role === "user"
+            ? <div className="user-text">{m.text}</div>
+            : <div className="markdown-body" dangerouslySetInnerHTML={md(m.text)} />
+        )}
         {m.blocks && m.blocks.map((b, i) => (
           b.kind === "tool" ? (
             <div key={i} className="tool-block">

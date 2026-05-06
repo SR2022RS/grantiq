@@ -69,9 +69,25 @@ function orgShort(id) {
   })[id] || id;
 }
 
-// Tiny markdown — bold + paragraphs only (mock)
+// Markdown renderer — uses marked.js when available, falls back to a
+// minimal bold/code parser. The agent emits real markdown (headings,
+// bullets, tables, fenced code), so the full parser is the default path.
 function md(s) {
-  const html = s
+  if (s == null) return { __html: "" };
+  const text = String(s);
+
+  if (window.marked && typeof window.marked.parse === "function") {
+    try {
+      // GFM: bullet lists, numbered lists, tables, fenced code, autolinks
+      const html = window.marked.parse(text, { gfm: true, breaks: true });
+      return { __html: html };
+    } catch (e) {
+      // fall through to mini parser
+      console.warn("marked.parse failed, falling back:", e);
+    }
+  }
+
+  const html = text
     .split(/\n\n+/).map(p =>
       "<p>" +
       p.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
