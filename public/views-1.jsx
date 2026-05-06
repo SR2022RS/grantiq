@@ -325,7 +325,7 @@ function PipelineView({ orgFilter, focusGrantId, onNav }) {
                     </td>
                     <td><span className={"pill pill-" + g.status}>{g.status}</span></td>
                     <td className="right-actions">
-                      <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); onNav("drafts"); }}>{open ? "Close" : "Open"}</button>
+                      <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); setExpand(open ? null : g.id); }}>{open ? "Close" : "Open"}</button>
                     </td>
                   </tr>
                   {open && (
