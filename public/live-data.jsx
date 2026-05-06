@@ -23,13 +23,15 @@ async function sbGet(table, query = '') {
 
 function mapOrg(row) {
   const data = row.data || {};
-  const certs = (data.certifications || []).slice(0, 6);
+  const certs = (data.certifications || data.certs || []).slice(0, 6);
+  const builtinShort = {
+    holigenix_healthcare: 'Holigenix',
+    k1_management:        'K1 Mgmt',
+    owner_nonprofit:      'Owner NP',
+  }[row.id];
   return {
     id: row.id,
-    short:
-      row.id === 'holigenix_healthcare' ? 'Holigenix' :
-      row.id === 'k1_management'        ? 'K1 Mgmt'   :
-      row.id === 'owner_nonprofit'      ? 'Owner NP'  : row.id,
+    short: builtinShort || data.short || row.name || row.id,
     name: row.name,
     certs,
   };
