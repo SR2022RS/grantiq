@@ -166,6 +166,35 @@ function InboxView({ orgFilter, onNav }) {
 
 function PipelineView({ orgFilter, focusGrantId, onNav }) {
   const [showAddGrant, setShowAddGrant] = React.useState(false);
+  const [draftingGrantId, setDraftingGrantId] = React.useState(null);
+
+  async function draftApplication(grant) {
+    if (draftingGrantId) return;
+    setDraftingGrantId(grant.id);
+    try {
+      const r = await fetch("/api/grants/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grant_id: grant.id, org_id: grant.org_id }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) {
+        alert("Draft failed: " + (j.error || "HTTP " + r.status));
+      } else {
+        // Refresh live data so the Drafts tab populates, then navigate
+        if (window.loadLiveData) {
+          await window.loadLiveData()
+            .then((live) => Object.assign(window.MOCK, live))
+            .catch(() => {});
+        }
+        onNav("drafts", { draftId: j.draft_id });
+      }
+    } catch (e) {
+      alert("Network error: " + e.message);
+    } finally {
+      setDraftingGrantId(null);
+    }
+  }
   const { GRANTS } = window.MOCK;
   const { matchClass, fmtShortDate, daysUntil, orgShort } = window.Helpers;
   const I = window.IconSet;
@@ -315,7 +344,13 @@ function PipelineView({ orgFilter, focusGrantId, onNav }) {
                             <h5 style={{marginTop:14}}>Source</h5>
                             <p className="mono" style={{fontSize:11.5}}>{g.source}</p>
                             <div style={{display:"flex", gap:8, marginTop:14}}>
-                              <button className="btn btn-primary btn-sm">Draft application</button>
+                              <button
+                                className="btn btn-primary btn-sm"
+                                onClick={() => draftApplication(g)}
+                                disabled={draftingGrantId === g.id}
+                              >
+                                {draftingGrantId === g.id ? "Drafting…" : "Draft application"}
+                              </button>
                               <button className="btn btn-sm">Mark reviewing</button>
                               <button className="btn btn-ghost btn-sm">Skip</button>
                             </div>
