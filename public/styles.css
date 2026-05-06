@@ -1804,3 +1804,194 @@ body.org-all       { --org-accent: var(--text-2);        --org-accent-bg: var(--
   color: var(--accent, #f5a524);
   font-weight: 600;
 }
+
+/* ─── Brief — pitch deck sections ──────────────────────────────────────── */
+.brief-tagline {
+  font-size: 14px; font-weight: 500;
+  color: var(--accent, #f5a524);
+  letter-spacing: -0.2px;
+  margin-top: 6px;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+}
+.brief-subtitle {
+  font-size: 13px; color: var(--text-3, #9ca3af);
+  margin-top: 4px; line-height: 1.4;
+}
+.brief-meta-row {
+  display: flex; gap: 10px; align-items: center;
+  margin-top: 10px; flex-wrap: wrap;
+}
+.brief-chip {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.6px;
+  text-transform: uppercase;
+  background: var(--accent-bg, rgba(245,165,36,0.10));
+  color: var(--accent, #f5a524);
+  border: 1px solid var(--accent-bg-2, rgba(245,165,36,0.20));
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--font-mono, monospace);
+}
+.brief-vision {
+  font-size: 11.5px; color: var(--text-4, #6b7280);
+  font-style: italic;
+}
+
+.problem-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.problem-card {
+  background: var(--bg-1, #0e1014);
+  border: 1px solid var(--line, #1c1f27);
+  border-left: 3px solid #ef4444;
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.problem-title {
+  font-size: 13px; font-weight: 600;
+  color: #ef4444;
+  margin-bottom: 6px;
+}
+.problem-body {
+  font-size: 12.5px; color: var(--text-2, #c5c5c8);
+  line-height: 1.5;
+}
+
+.pillars-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.pillar-card {
+  background: var(--bg-1, #0e1014);
+  border: 1px solid var(--line, #1c1f27);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pillar-head {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.2px;
+  padding: 10px 14px;
+  text-transform: uppercase;
+}
+.pillar-blue .pillar-head { background: oklch(0.65 0.18 240 / 0.18); color: oklch(0.78 0.16 240); }
+.pillar-red  .pillar-head { background: oklch(0.65 0.20 27  / 0.18); color: oklch(0.74 0.20 27);  }
+.pillar-list {
+  list-style: none; padding: 12px 14px; margin: 0;
+}
+.pillar-list li {
+  font-size: 12px; line-height: 1.45;
+  padding: 4px 0 4px 16px;
+  position: relative;
+  color: var(--text-2, #c5c5c8);
+}
+.pillar-list li::before {
+  content: ""; position: absolute; left: 0; top: 9px;
+  width: 5px; height: 5px;
+  border-radius: 1px;
+  background: var(--accent, #f5a524);
+}
+
+.alignment-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.alignment-card {
+  background: var(--bg-1, #0e1014);
+  border: 1px solid var(--line, #1c1f27);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.alignment-cat {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.4px;
+  color: var(--accent, #f5a524);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line, #1c1f27);
+}
+.alignment-card ul { list-style: none; padding: 0; margin: 0; }
+.alignment-card li {
+  font-size: 11.5px; line-height: 1.5;
+  padding: 3px 0 3px 14px;
+  position: relative;
+  color: var(--text-2, #c5c5c8);
+}
+.alignment-card li::before {
+  content: "·"; position: absolute; left: 4px; top: 0;
+  color: var(--accent, #f5a524); font-weight: 700;
+}
+
+.uof-list { display: flex; flex-direction: column; gap: 4px; }
+.uof-row {
+  display: grid; grid-template-columns: 70px 1fr;
+  gap: 14px; align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-1, #0e1014);
+  border: 1px solid var(--line, #1c1f27);
+  border-radius: 6px;
+}
+.uof-pct {
+  font-family: var(--font-mono, monospace);
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--accent, #f5a524);
+  text-align: center;
+}
+.uof-label { font-size: 13px; font-weight: 600; }
+.uof-desc  { font-size: 11.5px; color: var(--text-3, #9ca3af); margin-top: 2px; line-height: 1.4; }
+
+.roadmap-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.roadmap-card {
+  background: var(--bg-1, #0e1014);
+  border: 1px solid var(--line, #1c1f27);
+  border-radius: 8px;
+  padding: 14px 16px;
+  position: relative;
+}
+.roadmap-card.status-complete    { border-top: 3px solid #22c55e; }
+.roadmap-card.status-in_progress { border-top: 3px solid var(--accent, #f5a524); }
+.roadmap-card.status-future      { border-top: 3px solid var(--text-4, #6b7280); }
+.roadmap-phase {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-3, #9ca3af);
+}
+.roadmap-label {
+  font-size: 13px; font-weight: 600;
+  margin-top: 2px;
+  color: var(--text, #e7e7ea);
+}
+.roadmap-card.status-complete    .roadmap-label { color: #22c55e; }
+.roadmap-card.status-in_progress .roadmap-label { color: var(--accent, #f5a524); }
+.roadmap-card ul { list-style: none; padding: 0; margin: 12px 0 0; }
+.roadmap-card li {
+  font-size: 12px; line-height: 1.5;
+  padding: 3px 0 3px 14px;
+  position: relative;
+  color: var(--text-2, #c5c5c8);
+}
+.roadmap-card li::before {
+  content: ""; position: absolute; left: 2px; top: 9px;
+  width: 4px; height: 4px;
+  background: var(--accent, #f5a524);
+  border-radius: 1px;
+}
+
+.closing-section {
+  margin-top: 28px;
+  border-top: 1px solid var(--line, #1c1f27);
+  padding-top: 22px;
+}
+.closing-pitch {
+  font-size: 17px; line-height: 1.55;
+  color: var(--text, #e7e7ea);
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  text-align: center;
+  padding: 18px 24px;
+  background: var(--accent-bg, rgba(245, 165, 36, 0.08));
+  border: 1px solid var(--accent-bg-2, rgba(245, 165, 36, 0.20));
+  border-radius: 8px;
+}

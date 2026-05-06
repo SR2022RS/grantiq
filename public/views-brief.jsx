@@ -127,7 +127,15 @@ function BriefView({ orgFilter }) {
       <div className="brief-head">
         <div>
           <h2>{org.name}</h2>
-          <p className="sub">Project brief — used by the Grants agent when reasoning about grant fit.</p>
+          {brief.tagline && <div className="brief-tagline">{brief.tagline}</div>}
+          {brief.subtitle && <div className="brief-subtitle">{brief.subtitle}</div>}
+          {!brief.tagline && !brief.subtitle && <p className="sub">Project brief — used by the Grants agent when reasoning about grant fit.</p>}
+          {(brief.founded_year || brief.vision_line) && (
+            <div className="brief-meta-row">
+              {brief.founded_year && <span className="brief-chip">Founded {brief.founded_year}</span>}
+              {brief.vision_line && <span className="brief-vision">{brief.vision_line}</span>}
+            </div>
+          )}
         </div>
         <div className="brief-actions">
           {!editing ? (
@@ -175,10 +183,44 @@ function BriefView({ orgFilter }) {
       {/* ─── Narrative blocks ─────────────────────────────────────────── */}
       <NarrativeBlock label="Who we are" value={brief.who_we_are || ""}
         editing={editing} onChange={v => setBrief(b => ({ ...b, who_we_are: v }))} />
-      <NarrativeBlock label="The problem" value={brief.the_problem || ""}
-        editing={editing} onChange={v => setBrief(b => ({ ...b, the_problem: v }))} />
+
+      {/* Problem — show breakdown if present, fall through to plain narrative otherwise */}
+      {(brief.the_problem_breakdown || []).length > 0 && !editing ? (
+        <section className="brief-section">
+          <h3>The problem</h3>
+          <div className="problem-grid">
+            {brief.the_problem_breakdown.map((p, i) => (
+              <div key={i} className="problem-card">
+                <div className="problem-title">{p.title}</div>
+                <div className="problem-body">{p.body}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <NarrativeBlock label="The problem" value={brief.the_problem || ""}
+          editing={editing} onChange={v => setBrief(b => ({ ...b, the_problem: v }))} />
+      )}
+
       <NarrativeBlock label="Our solution" value={brief.our_solution || ""}
         editing={editing} onChange={v => setBrief(b => ({ ...b, our_solution: v }))} />
+
+      {/* Pillars — only render in view mode if present */}
+      {(brief.pillars || []).length > 0 && !editing && (
+        <section className="brief-section">
+          <h3>Three pillars. One pipeline.</h3>
+          <div className="pillars-grid">
+            {brief.pillars.map((p, i) => (
+              <div key={i} className={"pillar-card pillar-" + (p.color || "blue")}>
+                <div className="pillar-head">{p.icon || p.label}</div>
+                <ul className="pillar-list">
+                  {(p.items || []).map((it, j) => <li key={j}>{it}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ─── Target population ────────────────────────────────────────── */}
       <ListBlock label="Target population" items={brief.target_population || []}
@@ -206,18 +248,77 @@ function BriefView({ orgFilter }) {
         {editing && <button className="btn btn-ghost btn-sm" onClick={addWhy}>+ Add reason</button>}
       </section>
 
-      {/* ─── Funding alignment ────────────────────────────────────────── */}
-      <ListBlock label="Funding alignment (grant categories this org fits)"
-        items={brief.funding_alignment || []}
-        editing={editing}
-        onSet={(i, v) => listSet("funding_alignment", i, v)}
-        onAdd={() => listAdd("funding_alignment")}
-        onRemove={(i) => listRemove("funding_alignment", i)}
-        placeholder="DOL Workforce Innovation (WIOA)" />
+      {/* ─── Funding alignment — detailed if present, otherwise simple list ── */}
+      {(brief.funding_alignment_detail || []).length > 0 && !editing ? (
+        <section className="brief-section">
+          <h3>Funding alignment</h3>
+          <div className="alignment-grid">
+            {brief.funding_alignment_detail.map((cat, i) => (
+              <div key={i} className="alignment-card">
+                <div className="alignment-cat">{cat.category}</div>
+                <ul>
+                  {(cat.points || []).map((p, j) => <li key={j}>{p}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <ListBlock label="Funding alignment (grant categories this org fits)"
+          items={brief.funding_alignment || []}
+          editing={editing}
+          onSet={(i, v) => listSet("funding_alignment", i, v)}
+          onAdd={() => listAdd("funding_alignment")}
+          onRemove={(i) => listRemove("funding_alignment", i)}
+          placeholder="DOL Workforce Innovation (WIOA)" />
+      )}
+
+      {/* ─── Use of funds ─────────────────────────────────────────────── */}
+      {(brief.use_of_funds || []).length > 0 && !editing && (
+        <section className="brief-section">
+          <h3>Use of funds</h3>
+          <div className="uof-list">
+            {brief.use_of_funds.map((u, i) => (
+              <div key={i} className="uof-row">
+                <div className="uof-pct">{u.pct}%</div>
+                <div className="uof-body">
+                  <div className="uof-label">{u.label}</div>
+                  <div className="uof-desc">{u.body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─── Roadmap ──────────────────────────────────────────────────── */}
+      {(brief.roadmap || []).length > 0 && !editing && (
+        <section className="brief-section">
+          <h3>Roadmap</h3>
+          <div className="roadmap-grid">
+            {brief.roadmap.map((r, i) => (
+              <div key={i} className={"roadmap-card status-" + (r.status || "future")}>
+                <div className="roadmap-phase">{r.phase}</div>
+                <div className="roadmap-label">{r.label}</div>
+                <ul>
+                  {(r.items || []).map((it, j) => <li key={j}>{it}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ─── Grant funding request ────────────────────────────────────── */}
       <NarrativeBlock label="Grant funding request" value={brief.funding_request || ""}
         editing={editing} onChange={v => setBrief(b => ({ ...b, funding_request: v }))} />
+
+      {/* ─── Closing pitch ────────────────────────────────────────────── */}
+      {brief.closing_pitch && !editing && (
+        <section className="brief-section closing-section">
+          <div className="closing-pitch">{brief.closing_pitch}</div>
+        </section>
+      )}
     </div>
   );
 }
