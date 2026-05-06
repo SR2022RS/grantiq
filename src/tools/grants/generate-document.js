@@ -13,7 +13,7 @@ import { getSupabase } from '../../lib/supabase.js';
 import {
   getDocTypeMetadata,
   resolveDocType,
-  readTemplateForOrg,
+  readTemplateForOrgAsync,
   renderTemplate,
 } from '../../lib/document-catalog.js';
 
@@ -73,11 +73,11 @@ export async function generateDocument({ org_id, doc_type, grant_id }) {
 
   // ─── DRAFTABLE ──────────────────────────────────────────────────────────
   if (meta.template_kind === 'draftable') {
-    const template = readTemplateForOrg(org_id, canonical);
+    const template = await readTemplateForOrgAsync(supabase, org_id, canonical);
     if (!template) {
       return {
         ok: false,
-        error: `No draftable template on disk for (${org_id}, ${canonical}). Add one at workspace/templates/${org_id}/${canonical}.md or use a different org_id.`,
+        error: `No draftable template found for (${org_id}, ${canonical}). Add one at workspace/templates/${org_id}/${canonical}.md, or to the org_templates DB table.`,
         template_kind: 'draftable',
       };
     }

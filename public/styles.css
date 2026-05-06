@@ -1496,3 +1496,98 @@ body.org-all       { --org-accent: var(--text-2);        --org-accent-bg: var(--
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+/* ─── Modal (AddOrgModal, future modals) ───────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: modal-fade 0.15s ease;
+}
+@keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-card {
+  background: var(--bg-1, #0e1014);
+  border: 1px solid var(--line, #1c1f27);
+  border-radius: 8px;
+  width: 100%; max-width: 640px;
+  max-height: 90vh; overflow: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: modal-pop 0.18s ease;
+}
+@keyframes modal-pop {
+  from { transform: translateY(8px) scale(0.98); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+
+.modal-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 18px 20px 14px; gap: 12px;
+  border-bottom: 1px solid var(--line, #1c1f27);
+}
+.modal-head h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; margin: 0; }
+.modal-head .sub { font-size: 12px; color: var(--text-3, #9ca3af); margin: 4px 0 0; line-height: 1.45; }
+.modal-head .btn-ghost { font-size: 22px; line-height: 1; padding: 0 8px; }
+
+.modal-body { padding: 18px 20px 4px; display: flex; flex-direction: column; gap: 14px; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-1 { display: block; }
+.form-row label, .form-row-1 { display: flex; flex-direction: column; gap: 5px; }
+
+.form-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
+  text-transform: uppercase; color: var(--text-3, #9ca3af);
+}
+.form-label .req { color: var(--accent, #f5a524); margin-left: 2px; }
+
+.modal-body input[type="text"],
+.modal-body input[type="email"],
+.modal-body textarea {
+  background: var(--bg-2, #0a0b0f);
+  border: 1px solid var(--line, #1c1f27);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text, #e7e7ea);
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.modal-body input:focus,
+.modal-body textarea:focus {
+  border-color: var(--accent, #f5a524);
+}
+.modal-body textarea { resize: vertical; min-height: 60px; line-height: 1.45; }
+
+.form-hint { font-size: 10.5px; color: var(--text-4, #6b7280); margin-top: 2px; }
+.form-hint code {
+  font-family: var(--font-mono, monospace);
+  background: var(--bg-2, #0a0b0f);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10.5px;
+}
+
+.form-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.modal-foot {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 14px 0 18px;
+  border-top: 1px solid var(--line, #1c1f27);
+  margin-top: 4px;
+}
+
+/* "Add business" sidebar entry styling */
+.org-pick.org-add { opacity: 0.85; }
+.org-pick.org-add:hover { opacity: 1; }

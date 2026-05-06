@@ -263,11 +263,31 @@ export function listDraftableDocTypes() {
 }
 
 // Read a draftable template from disk for a specific org. Returns null if no template exists.
+// Sync — kept for back-compat. Prefer readTemplateForOrgAsync which also checks
+// the org_templates DB table (used for orgs onboarded via the portal UI, since
+// Vercel filesystem is read-only at runtime).
 export function readTemplateForOrg(org_id, doc_type) {
   const canonical = resolveDocType(doc_type);
   const path = resolve(TEMPLATES_DIR, org_id, `${canonical}.md`);
   if (!existsSync(path)) return null;
   return readFileSync(path, 'utf8');
+}
+
+// Async variant — check filesystem first, then fall back to org_templates table.
+// `supabase` is the Supabase client (passed in to keep this module DB-agnostic).
+export async function readTemplateForOrgAsync(supabase, org_id, doc_type) {
+  const fileTpl = readTemplateForOrg(org_id, doc_type);
+  if (fileTpl !== null) return fileTpl;
+
+  const canonical = resolveDocType(doc_type);
+  const { data, error } = await supabase
+    .from('org_templates')
+    .select('body')
+    .eq('org_id', org_id)
+    .eq('doc_type', canonical)
+    .maybeSingle();
+  if (error) return null;
+  return data?.body || null;
 }
 
 // List which draftable doc types have on-disk templates for a given org.

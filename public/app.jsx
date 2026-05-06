@@ -19,6 +19,7 @@ function App() {
   const [tweaks, setTweak]        = window.useTweaks(TWEAK_DEFAULTS);
   const [dataReload, setDataReload] = useStateApp(0);
   const [dataStatus, setDataStatus] = useStateApp("mock"); // "mock" | "loading" | "live" | "error"
+  const [showAddOrg, setShowAddOrg] = useStateApp(false);
 
   // Bootstrap: on mount, fetch live data from Supabase + APIs and mutate
   // window.MOCK in place. Then bump dataReload to force a re-render so all
@@ -95,12 +96,41 @@ function App() {
     };
   };
 
+  // Built-in orgs ship with hand-picked colors + bodyClass for accent theming.
+  // Dynamically-added orgs get a generated color based on a hash of their id.
+  const STATIC_ORG_META = {
+    "all":                  { label: "All businesses",      short: "All",       letter: "·", bodyClass: "org-all",       hue: null },
+    "holigenix_healthcare": { label: "Holigenix Healthcare", short: "Holigenix", letter: "H", bodyClass: "org-holigenix", hue: 195 },
+    "k1_management":        { label: "K1 Management",       short: "K1 Mgmt",   letter: "K", bodyClass: "org-k1",         hue: 38  },
+    "owner_nonprofit":      { label: "Owner Nonprofit",     short: "Owner NP",  letter: "O", bodyClass: "org-owner",      hue: 290 },
+  };
+  function hueFromId(id) {
+    let h = 0; for (const c of id) h = ((h * 31) + c.charCodeAt(0)) | 0;
+    return Math.abs(h) % 360;
+  }
+  function metaForOrg(row) {
+    if (STATIC_ORG_META[row.id]) return STATIC_ORG_META[row.id];
+    return {
+      label: row.name || row.short || row.id,
+      short: row.short || row.name || row.id,
+      letter: ((row.short || row.name || row.id)[0] || "?").toUpperCase(),
+      bodyClass: "org-" + row.id.replace(/[^a-z0-9]/g, "-"),
+      hue: hueFromId(row.id),
+    };
+  }
+  const liveOrgs = (window.MOCK?.ORGS || []).filter(o => o.id !== "all");
   const orgs = [
-    { id: "all",                  label: "All businesses", short: "All",       letter: "·",  bodyClass: "org-all" },
-    { id: "holigenix_healthcare", label: "Holigenix Healthcare", short: "Holigenix", letter: "H", bodyClass: "org-holigenix" },
-    { id: "k1_management",        label: "K1 Management", short: "K1 Mgmt",   letter: "K", bodyClass: "org-k1" },
-    { id: "owner_nonprofit",      label: "Owner Nonprofit", short: "Owner NP",letter: "O", bodyClass: "org-owner" },
+    { id: "all", ...STATIC_ORG_META["all"] },
+    ...liveOrgs.map(row => ({ id: row.id, ...metaForOrg(row) })),
   ];
+  // Fallback if live data hasn't loaded yet — keep the 3 known orgs visible
+  if (liveOrgs.length === 0) {
+    orgs.push(
+      { id: "holigenix_healthcare", ...STATIC_ORG_META["holigenix_healthcare"] },
+      { id: "k1_management",        ...STATIC_ORG_META["k1_management"] },
+      { id: "owner_nonprofit",      ...STATIC_ORG_META["owner_nonprofit"] },
+    );
+  }
 
   // Sync body class so org accent flows through CSS
   useEffectApp(() => {
@@ -159,14 +189,26 @@ function App() {
           <div className="label">Viewing</div>
           {orgs.map((o, i) => {
             const c = orgCounts(o.id);
+            const swatchStyle = o.id === "all"
+              ? null
+              : { background: `oklch(0.78 0.16 ${o.hue ?? 38})` };
             return (
               <button key={o.id} className={"org-pick " + (o.id === "all" ? "all " : "") + (orgFilter === o.id ? "active" : "")} onClick={() => setOrgFilter(o.id)}>
-                <span className="swatch" style={o.id === "all" ? null : {background: `var(--org-accent, var(--accent))`, ...(o.id === "holigenix_healthcare" && {background: "oklch(0.78 0.13 195)"}), ...(o.id === "k1_management" && {background: "oklch(0.78 0.16 38)"}), ...(o.id === "owner_nonprofit" && {background: "oklch(0.78 0.13 290)"})}}>{o.letter}</span>
+                <span className="swatch" style={swatchStyle}>{o.letter}</span>
                 <span style={{textAlign:"left"}}>{o.short}</span>
                 <span className="count">{c.grants}</span>
               </button>
             );
           })}
+          <button
+            className="org-pick org-add"
+            onClick={() => setShowAddOrg(true)}
+            title="Add a new business to GrantIQ"
+          >
+            <span className="swatch" style={{background:"var(--bg-2, #1c1f27)", border:"1px dashed var(--text-4, #6b7280)", color:"var(--text-3, #9ca3af)"}}>+</span>
+            <span style={{textAlign:"left", color:"var(--text-3, #9ca3af)"}}>Add business</span>
+            <span className="count" style={{visibility:"hidden"}}>0</span>
+          </button>
         </div>
         <div className="nav-group">
           <div className="label">Operate</div>
@@ -210,7 +252,7 @@ function App() {
 
       <main className="work">
         <div className="org-context">
-          <div className="swatch" style={orgFilter === "all" ? {background:"linear-gradient(135deg, oklch(0.78 0.13 195), oklch(0.78 0.16 38), oklch(0.78 0.13 290))"} : orgFilter === "holigenix_healthcare" ? {background:"oklch(0.78 0.13 195)"} : orgFilter === "k1_management" ? {background:"oklch(0.78 0.16 38)"} : {background:"oklch(0.78 0.13 290)"}}>{activeOrg.letter}</div>
+          <div className="swatch" style={orgFilter === "all" ? {background:"linear-gradient(135deg, oklch(0.78 0.13 195), oklch(0.78 0.16 38), oklch(0.78 0.13 290))"} : {background: `oklch(0.78 0.16 ${activeOrg.hue ?? 38})`}}>{activeOrg.letter}</div>
           <div>
             <div className="lbl">Active business</div>
             <div className="name">{activeOrg.label}</div>
@@ -278,6 +320,27 @@ function App() {
             ))}
           </div>
         </aside>
+      )}
+
+      {showAddOrg && (
+        <window.AddOrgModal
+          onClose={() => setShowAddOrg(false)}
+          onCreated={(newOrg) => {
+            setShowAddOrg(false);
+            // Refresh live data so the new org appears, then select it
+            if (window.loadLiveData) {
+              window.loadLiveData()
+                .then((live) => {
+                  Object.assign(window.MOCK, live);
+                  setDataReload((n) => n + 1);
+                  setOrgFilter(newOrg.id);
+                })
+                .catch(() => setOrgFilter(newOrg.id));
+            } else {
+              setOrgFilter(newOrg.id);
+            }
+          }}
+        />
       )}
 
       <window.TweaksPanel title="Tweaks">
