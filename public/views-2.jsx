@@ -269,6 +269,70 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
   const [draftingId, setDraftingId] = React.useState(null);
   const [generatingPack, setGeneratingPack] = React.useState(false);
   const [draftPreview, setDraftPreview] = React.useState(null); // {doc_name, content}
+  const [uploadingId, setUploadingId] = React.useState(null);
+  const fileInputRef = React.useRef(null);
+  const pendingDocIdRef = React.useRef(null);
+
+  // Open the native file picker for a given vault doc. The actual upload
+  // happens in onFileChosen below once the user picks a file.
+  function openUploadPicker(doc) {
+    if (uploadingId) return;
+    pendingDocIdRef.current = doc.id;
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";       // reset so picking the same file twice still fires onChange
+      fileInputRef.current.click();
+    }
+  }
+
+  async function onFileChosen(e) {
+    const file = e.target.files && e.target.files[0];
+    const docId = pendingDocIdRef.current;
+    pendingDocIdRef.current = null;
+    if (!file || !docId) return;
+    if (file.size > 25 * 1024 * 1024) {
+      alert("File exceeds the 25 MB limit.");
+      return;
+    }
+    setUploadingId(docId);
+    try {
+      const url = `/api/orgs/vault-upload?doc_id=${encodeURIComponent(docId)}` +
+                  `&filename=${encodeURIComponent(file.name)}` +
+                  `&mime_type=${encodeURIComponent(file.type || "application/octet-stream")}`;
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: file,
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) {
+        alert("Upload failed: " + (j.error || ("HTTP " + r.status)));
+      } else {
+        // Refresh live data so the row flips to "uploaded" and the readiness count updates
+        if (window.loadLiveData) {
+          await window.loadLiveData().then(live => Object.assign(window.MOCK, live)).catch(() => {});
+        }
+      }
+    } catch (err) {
+      alert("Network error: " + err.message);
+    } finally {
+      setUploadingId(null);
+    }
+  }
+
+  // Open an uploaded file in a new tab via signed URL.
+  async function viewDocument(doc) {
+    try {
+      const r = await fetch(`/api/orgs/vault-file?doc_id=${encodeURIComponent(doc.id)}`);
+      const j = await r.json();
+      if (!r.ok || !j.ok) {
+        alert("Couldn't open file: " + (j.error || ("HTTP " + r.status)));
+        return;
+      }
+      window.open(j.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      alert("Network error: " + err.message);
+    }
+  }
 
   // Vault is org-specific — if "all", default to k1 (most active per PRD)
   const activeOrgId = orgFilter === "all" ? "k1_management" : orgFilter;
@@ -417,7 +481,13 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
                   </div>
                 </div>
               </div>
-              <button className="btn btn-primary btn-sm">Upload</button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => openUploadPicker(doc)}
+                disabled={uploadingId === doc.id}
+              >
+                {uploadingId === doc.id ? "Uploading…" : "Upload"}
+              </button>
             </div>
           ))}
         </div>
@@ -437,7 +507,9 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
                 <div className="desc">{d.description}</div>
                 <div className="stamp warn">expires {fmtDate(d.expires)} · {daysUntil(d.expires)} days left</div>
               </div>
-              <button className="btn btn-sm">Renew</button>
+              <button className="btn btn-sm" onClick={() => openUploadPicker(d)} disabled={uploadingId === d.id}>
+                {uploadingId === d.id ? "Uploading…" : "Renew"}
+              </button>
             </div>
           ))}
         </div>
@@ -494,11 +566,22 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
                     <div style={{display:"flex", gap:6, alignItems:"center"}}>
                       {d.status === "uploaded" ? (
                         <>
-                          <button className="btn btn-ghost btn-sm">View</button>
-                          <button className="btn btn-ghost btn-sm">Replace</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => viewDocument(d)}>View</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => openUploadPicker(d)} disabled={uploadingId === d.id}>
+                            {uploadingId === d.id ? "Uploading…" : "Replace"}
+                          </button>
                         </>
                       ) : (() => {
                         const kind = templateKindFor(d);
+                        const uploadBtn = (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => openUploadPicker(d)}
+                            disabled={uploadingId === d.id}
+                          >
+                            {uploadingId === d.id ? "Uploading…" : "Upload"}
+                          </button>
+                        );
                         if (kind === "draftable") {
                           return (
                             <>
@@ -510,7 +593,7 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
                               >
                                 {draftingId === d.id ? "Drafting…" : "Draft with AI"}
                               </button>
-                              <button className="btn btn-ghost btn-sm">Upload</button>
+                              {uploadBtn}
                             </>
                           );
                         }
@@ -521,7 +604,7 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
                               <button className="btn btn-sm" onClick={() => draftDocument(d)} disabled={draftingId === d.id}>
                                 {draftingId === d.id ? "…" : "Get email template"}
                               </button>
-                              <button className="btn btn-ghost btn-sm">Upload</button>
+                              {uploadBtn}
                             </>
                           );
                         }
@@ -532,11 +615,19 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
                               <button className="btn btn-sm" onClick={() => draftDocument(d)} disabled={draftingId === d.id}>
                                 {draftingId === d.id ? "…" : "Where to find"}
                               </button>
-                              <button className="btn btn-ghost btn-sm">Upload</button>
+                              {uploadBtn}
                             </>
                           );
                         }
-                        return <button className="btn btn-primary btn-sm">Upload</button>;
+                        return (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => openUploadPicker(d)}
+                            disabled={uploadingId === d.id}
+                          >
+                            {uploadingId === d.id ? "Uploading…" : "Upload"}
+                          </button>
+                        );
                       })()}
                     </div>
                   </div>
@@ -546,6 +637,15 @@ function VaultView({ orgFilter, onSetOrg, onNav }) {
           </div>
         );
       })}
+
+      {/* Hidden file picker shared by every Upload / Replace / Renew button. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        style={{display:"none"}}
+        accept="application/pdf,image/png,image/jpeg,image/webp,image/gif,text/markdown,text/plain,.doc,.docx,.xls,.xlsx"
+        onChange={onFileChosen}
+      />
     </div>
   );
 }
