@@ -8,8 +8,7 @@
 // The agent decides which tools to use; this endpoint just kicks it off.
 
 import { runGrantsTurn } from '../../src/agents/grants/index.js';
-
-const ORGS = ['holigenix_healthcare', 'k1_management', 'owner_nonprofit'];
+import { getSupabase } from '../../src/lib/supabase.js';
 
 const DISCOVERY_PROMPT = (orgId) =>
   `Daily discovery scan for ${orgId}.
@@ -28,8 +27,15 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 
+  // Read live org list from DB so any org added via the portal (e.g.,
+  // AI Junkies University) gets included in nightly discovery automatically.
+  const supabase = getSupabase();
+  const { data: orgRows, error: orgErr } = await supabase.from('orgs').select('id');
+  if (orgErr) return res.status(500).json({ error: 'failed to list orgs: ' + orgErr.message });
+  const orgIds = (orgRows || []).map((o) => o.id);
+
   const results = [];
-  for (const orgId of ORGS) {
+  for (const orgId of orgIds) {
     try {
       const result = await runGrantsTurn({
         userMessage: DISCOVERY_PROMPT(orgId),

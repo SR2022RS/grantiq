@@ -282,6 +282,8 @@ const SOURCES = [
   { id: "src13", name: "HelloSkip API",            type: "Aggregator",       coverage: "Curated grant database",      last_run: "2026-05-04T07:12:00Z", health: "ok",       items_24h: 18,  kept: 2,  org_relevance: ["all"], cron: "0 7 * * *" },
   { id: "src14", name: "SBA daily",                type: "Agency",           coverage: "Small Business Admin",        last_run: "2026-05-04T07:12:00Z", health: "ok",       items_24h: 8,   kept: 1,  org_relevance: ["k1_management","owner_nonprofit"], cron: "0 7 * * *" },
   { id: "src15", name: "Instrumentl-style scrape", type: "Custom",           coverage: "Foundation 990 scrape",        last_run: "2026-05-04T03:00:00Z", health: "warn",     items_24h: 0,   kept: 0,  org_relevance: ["all"], cron: "0 3 * * *", note: "Auth captcha on last run — needs review" },
+  { id: "src16", name: "Instrumentl",              type: "Aggregator",       coverage: "31K+ active RFPs · 450K funder profiles · paid platform", last_run: "2026-05-06T07:15:00Z", health: "ok",   items_24h: 0,   kept: 0,  org_relevance: ["all"], cron: "0 7 * * *", note: "Public landing pages scraped; full RFP detail behind paywall — add credentials to Playwright agent to unlock full scrape" },
+  { id: "src17", name: "GrantWatch",               type: "Aggregator",       coverage: "Federal/state/foundation listings · paid platform",      last_run: "2026-05-06T07:15:00Z", health: "ok",   items_24h: 0,   kept: 0,  org_relevance: ["all"], cron: "0 7 * * *", note: "Public preview scraped (title + brief description); full eligibility detail behind paywall" },
 ];
 
 // ─────────────────────────────────────────────────────────────────

@@ -1,10 +1,46 @@
 // Inbox + Pipeline views
 const { useState, useMemo } = React;
 
+// Fire-and-forget on-demand discovery. Used by Inbox + Pipeline buttons.
+// Resolves to {ok, message} or {ok:false, error}.
+async function runDiscoveryFor(orgFilter) {
+  try {
+    const r = await fetch("/api/grants/discover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ org_id: orgFilter }),
+    });
+    const j = await r.json();
+    return { ok: r.ok && j.ok, message: j.message, error: j.error };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
 function InboxView({ orgFilter, onNav }) {
   const { GRANTS, DRAFTS, SESSIONS, ALERTS } = window.MOCK;
   const { relTime, daysUntil, matchClass, orgShort } = window.Helpers;
   const I = window.IconSet;
+  const [discoveryState, setDiscoveryState] = React.useState("idle"); // idle | running | started
+
+  async function onRunDiscovery() {
+    if (discoveryState === "running") return;
+    setDiscoveryState("running");
+    const res = await runDiscoveryFor(orgFilter);
+    if (!res.ok) {
+      setDiscoveryState("idle");
+      alert("Discovery failed to start: " + (res.error || "unknown"));
+      return;
+    }
+    setDiscoveryState("started");
+    // After 60s, refresh live data so new grants surface
+    setTimeout(() => {
+      if (window.loadLiveData) {
+        window.loadLiveData().then(live => Object.assign(window.MOCK, live)).catch(() => {});
+      }
+      setDiscoveryState("idle");
+    }, 60_000);
+  }
 
   const inOrg = (id) => orgFilter === "all" || id === orgFilter;
 
@@ -28,7 +64,10 @@ function InboxView({ orgFilter, onNav }) {
         </div>
         <div className="actions">
           <button className="btn btn-ghost"><span>{I.refresh}</span> Refresh</button>
-          <button className="btn"><span>{I.search}</span> Run discovery now</button>
+          <button className="btn" onClick={onRunDiscovery} disabled={discoveryState === "running"}>
+            <span>{I.search}</span>{" "}
+            {discoveryState === "running" ? "Starting…" : discoveryState === "started" ? "Running in background…" : "Run discovery now"}
+          </button>
         </div>
       </div>
 
@@ -167,6 +206,25 @@ function InboxView({ orgFilter, onNav }) {
 function PipelineView({ orgFilter, focusGrantId, onNav }) {
   const [showAddGrant, setShowAddGrant] = React.useState(false);
   const [draftingGrantId, setDraftingGrantId] = React.useState(null);
+  const [discoveryState, setDiscoveryState] = React.useState("idle"); // idle | running | started
+
+  async function onRunDiscovery() {
+    if (discoveryState === "running") return;
+    setDiscoveryState("running");
+    const res = await runDiscoveryFor(orgFilter);
+    if (!res.ok) {
+      setDiscoveryState("idle");
+      alert("Discovery failed to start: " + (res.error || "unknown"));
+      return;
+    }
+    setDiscoveryState("started");
+    setTimeout(() => {
+      if (window.loadLiveData) {
+        window.loadLiveData().then(live => Object.assign(window.MOCK, live)).catch(() => {});
+      }
+      setDiscoveryState("idle");
+    }, 60_000);
+  }
 
   async function draftApplication(grant) {
     if (draftingGrantId) return;
@@ -234,7 +292,10 @@ function PipelineView({ orgFilter, focusGrantId, onNav }) {
           <div className="sub">{list.length} grant{list.length===1?"":"s"} matching filters · sorted by {sort}</div>
         </div>
         <div className="actions">
-          <button className="btn"><span>{I.search}</span> Run discovery</button>
+          <button className="btn" onClick={onRunDiscovery} disabled={discoveryState === "running"}>
+            <span>{I.search}</span>{" "}
+            {discoveryState === "running" ? "Starting…" : discoveryState === "started" ? "Running in background…" : "Run discovery"}
+          </button>
           <button className="btn btn-primary" onClick={() => setShowAddGrant(true)}>+ Add grant</button>
         </div>
       </div>

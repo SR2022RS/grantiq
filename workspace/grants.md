@@ -31,6 +31,21 @@ Pattern:
 4. Save promising grants to the pipeline (`save_grant` with status='new')
 5. Summarize top matches to the user with: name, agency, amount, deadline, match score, one-sentence rationale
 
+**Discovery sources to query.** When using `web_search`, treat the following as priority sources for grant aggregation. Issue searches scoped to these domains in addition to general queries:
+
+| Source | Notes | How to query |
+|---|---|---|
+| **Grants.gov** | Federal grants, free, comprehensive. Best for HRSA / SBA / MBDA / DOL / NIH. | `site:grants.gov <topic> <region>` |
+| **SAM.gov** | Federal contracts (not grants but UEI-gated, K1 lane). | `site:sam.gov <NAICS>` |
+| **Instrumentl** | Paid aggregator ($299-$999/mo). Full RFP detail is gated; public landing pages and search snippets are scrapeable. Use `fetch_webpage` on public funder profiles. | `site:instrumentl.com <topic>` |
+| **GrantWatch** | Paid aggregator ($97-$149/mo). Public preview of grant listings (title + brief description + deadline + amount); full eligibility detail is gated. | `site:grantwatch.com <topic> <state>` |
+| **GrantStation** | Federal + foundation directory. | `site:grantstation.com` |
+| **Candid (Foundation Directory)** | 990-derived foundation data. | `site:candid.org <funder>` |
+| **State portals** | PA DCED, NJ EDA, DE OSD, GCDD (GA) — varies by org region. | `site:dced.pa.gov`, `site:njeda.com`, etc. |
+| **HRSA, SBA, MBDA, DOL** | Agency-specific opportunity pages. | `site:hrsa.gov/grants`, `site:sba.gov`, etc. |
+
+For paid aggregators (Instrumentl, GrantWatch): you cannot read full grant detail without credentials. If a grant looks promising but you only have the public preview, save it with what you can confirm + `description` should include "Full detail behind paywall — verify directly at <source URL>" so the user knows to check before drafting.
+
 **Deadline extraction is mandatory.** Before calling `save_grant`, you MUST attempt to extract a deadline from the source page (use `fetch_webpage` if the search snippet doesn't give one). Acceptable deadline values:
 
 - An ISO date `YYYY-MM-DD` (e.g., 2026-08-15) — preferred
