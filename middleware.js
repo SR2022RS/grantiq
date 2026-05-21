@@ -1,13 +1,17 @@
 // HTTP Basic Auth gate for the entire portal — gates pages AND API routes
-// before they hit any function. Only Vercel cron routes are excluded
-// (they authenticate via x-vercel-signature, not a browser session).
+// before they hit any function. Excluded from the gate (must stay public):
+//   - api/cron/         Vercel crons (authenticate via x-vercel-signature)
+//   - api/leads/submit  public sales-page lead capture (honeypot + rate limit)
+//   - landing / get-access  the public GrantIQ marketing page + its rewrites
+// Note the admin lead endpoints (api/leads/list, api/leads/update) are NOT
+// excluded — they stay behind the gate.
 //
 // Set PORTAL_PASSWORD in Vercel env vars. Username is hardcoded to "partner".
 // To revoke access: rotate PORTAL_PASSWORD and redeploy. To turn off entirely:
 // delete this file (or set PORTAL_AUTH_DISABLED=true) and redeploy.
 
 export const config = {
-  matcher: '/((?!api/cron/|_vercel/|favicon\\.ico).*)',
+  matcher: '/((?!api/cron/|api/leads/submit|_vercel/|favicon\\.ico|landing|get-access).*)',
 };
 
 export default function middleware(request) {
