@@ -2176,3 +2176,19 @@ body.org-all       { --org-accent: var(--text-2);        --org-accent-bg: var(--
 
 /* user bubble keeps plain rendering (their own typing) */
 .user-text { white-space: pre-wrap; line-height: 1.55; }
+
+/* Leads view — status dropdown */
+.lead-status-select {
+  width: 100%;
+  background: var(--surface-2, #1c2433);
+  color: var(--text, #f0f4f8);
+  border: 1px solid var(--hairline-2, rgba(255,255,255,0.08));
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.lead-status-select:hover { border-color: var(--accent-border, rgba(245,165,36,0.25)); }
+.lead-status-select:focus { outline: none; border-color: var(--accent, #f5a524); }
+.lead-status-select:disabled { opacity: 0.5; cursor: default; }

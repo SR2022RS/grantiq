@@ -237,6 +237,10 @@ function App() {
           <NavItem id="submissions" label="Submissions" icon={I.check}  page={page} onNav={onNav} />
         </div>
         <div className="nav-group">
+          <div className="label">Growth</div>
+          <NavItem id="leads"       label="Leads"       icon={I.search} page={page} onNav={onNav} accent />
+        </div>
+        <div className="nav-group">
           <div className="label">Intelligence</div>
           <NavItem id="chat"     label="Chat"     icon={I.chat}     page={page} onNav={onNav} />
           <NavItem id="notes"    label="Notes"    icon={I.notes}    page={page} onNav={onNav} />
@@ -285,6 +289,7 @@ function App() {
           {page === "dismissed"  && <window.DismissedView  orgFilter={orgFilter} />}
           {page === "funders"    && <window.FundersView    orgFilter={orgFilter} onNav={onNav} />}
           {page === "submissions"&& <window.SubmissionsView orgFilter={orgFilter} />}
+          {page === "leads"      && <window.LeadsView />}
           {page === "chat"     && <window.ChatView />}
           {page === "notes"    && <window.NotesView />}
           {page === "settings" && <window.SettingsView />}
