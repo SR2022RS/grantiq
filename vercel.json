@@ -7,7 +7,9 @@
     {"source": "/k1-upload", "destination": "/k1-upload.html"},
     {"source": "/k1", "destination": "/k1-upload.html"},
     {"source": "/holigenix-upload", "destination": "/holigenix-upload.html"},
-    {"source": "/holigenix", "destination": "/holigenix-upload.html"}
+    {"source": "/holigenix", "destination": "/holigenix-upload.html"},
+    {"source": "/landing", "destination": "/landing.html"},
+    {"source": "/get-access", "destination": "/landing.html"}
   ],
   "functions": {
     "api/**/*.js": {

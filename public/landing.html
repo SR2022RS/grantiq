@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GrantIQ — Daily AI Grant Scouting for Home Health Agencies</title>
+<meta name="description" content="GrantIQ scans federal, state, and foundation sources every day and delivers match-scored grant opportunities — with AI-drafted narratives ready for you to review and submit." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ───────────────────────────────────────────────────────────────
+   GrantIQ landing — amber-accent editorial dark theme
+   ─────────────────────────────────────────────────────────────── */
+:root {
+  --bg: #0E1219;
+  --bg-2: #0a0d12;
+  --surface: #161D27;
+  --surface-2: #1c2433;
+  --surface-3: #232c3d;
+  --hairline: rgba(245, 165, 36, 0.12);
+  --hairline-2: rgba(255,255,255,0.08);
+  --text: #F0F4F8;
+  --text-2: #b3bac4;
+  --text-3: #94A3B8;
+  --text-4: #6b7385;
+
+  --accent: #f5a524;
+  --accent-2: #ffbe4d;
+  --accent-deep: #c47616;
+  --accent-bg: rgba(245, 165, 36, 0.08);
+  --accent-bg-2: rgba(245, 165, 36, 0.18);
+  --accent-border: rgba(245, 165, 36, 0.25);
+
+  --green: #3ecf8e;
+  --red: #f0506e;
+
+  --font-serif: "Libre Baskerville", Georgia, "Times New Roman", serif;
+  --font-sans: "Source Sans 3", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Reusable display family */
+h1, h2, h3, h4, .display { font-family: var(--font-serif); font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; }
+.mono { font-family: var(--font-mono); font-feature-settings: "tnum"; }
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; font-size: inherit; }
+
+::selection { background: var(--accent-bg-2); color: var(--text); }
+
+/* Subtle background grid texture — adds editorial feel */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(900px circle at 80% -10%, rgba(245, 165, 36, 0.08), transparent 50%),
+    radial-gradient(800px circle at -10% 30%, rgba(245, 165, 36, 0.04), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.wrap { position: relative; z-index: 1; }
+
+/* Container */
+.container { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+.container-narrow { max-width: 880px; margin: 0 auto; padding: 0 28px; }
+
+/* ─── Nav ─── */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  background: rgba(14, 18, 25, 0.78);
+  border-bottom: 1px solid var(--hairline);
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0;
+  gap: 24px;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.brand-mark {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent);
+  display: grid; place-items: center;
+  font-family: var(--font-serif); font-weight: 700;
+  color: #0E1219; font-size: 14px;
+  box-shadow: 0 0 0 4px rgba(245, 165, 36, 0.12);
+}
+.brand-name {
+  font-family: var(--font-serif);
+  font-weight: 700; font-size: 20px;
+  letter-spacing: -0.01em;
+}
+.brand-name .accent-i { color: var(--accent); font-style: italic; }
+.nav-links { display: flex; gap: 28px; }
+.nav-links a {
+  font-size: 14.5px;
+  color: var(--text-3);
+  transition: color 0.15s;
+  font-weight: 500;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  background: var(--accent); color: #0E1219;
+  padding: 9px 18px;
+  border-radius: 7px;
+  font-weight: 600; font-size: 14.5px;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+.nav-cta:hover { background: var(--accent-2); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245, 165, 36, 0.25); }
+
+/* ─── Buttons ─── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-weight: 600; font-size: 16px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}
+.btn-primary {
+  background: var(--accent);
+  color: #0E1219;
+  box-shadow: 0 8px 28px rgba(245, 165, 36, 0.22), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.btn-primary:hover { background: var(--accent-2); transform: translateY(-1px); box-shadow: 0 12px 34px rgba(245, 165, 36, 0.32), inset 0 1px 0 rgba(255,255,255,0.25); }
+.btn-ghost {
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--hairline-2);
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--accent-border); background: var(--accent-bg); }
+.btn-lg { padding: 17px 30px; font-size: 17px; }
+
+/* ─── Eyebrows + display heads ─── */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 6px 12px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+h1.hero-h1 {
+  font-size: clamp(40px, 6vw, 72px);
+  line-height: 1.05;
+  margin: 28px 0 22px;
+  letter-spacing: -0.02em;
+}
+h1.hero-h1 em { font-style: italic; color: var(--accent); font-weight: 700; }
+
+h2.section-h {
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.15;
+  margin-bottom: 14px;
+  letter-spacing: -0.015em;
+}
+h3.card-h { font-size: 19px; line-height: 1.3; margin-bottom: 8px; }
+
+.lede {
+  font-size: clamp(17px, 1.4vw, 19px);
+  color: var(--text-3);
+  line-height: 1.65;
+  max-width: 720px;
+}
+
+/* ─── Hero ─── */
+section.hero {
+  padding: 80px 0 90px;
+  position: relative;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 56px;
+  align-items: center;
+}
+.hero-tagline {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-serif);
+  font-style: italic; font-size: 18px;
+  color: var(--text);
+  padding: 10px 18px;
+  background: linear-gradient(90deg, var(--accent-bg-2), var(--accent-bg) 70%);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  margin: 18px 0 32px;
+}
+.hero-tagline .ornament { color: var(--accent); font-style: normal; }
+.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+
+/* Hero email mockup */
+.digest-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.45), 0 12px 28px rgba(0,0,0,0.35);
+  overflow: hidden;
+  transform: perspective(1400px) rotateY(-2deg) rotateX(1deg);
+}
+.digest-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, rgba(245,165,36,0.06), transparent);
+  border-bottom: 1px solid var(--hairline);
+}
+.digest-head .from {
+  display: flex; align-items: center; gap: 10px;
+}
+.digest-head .from .avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); display: grid; place-items: center;
+  font-family: var(--font-serif); font-weight: 700; font-size: 14px; color: #0E1219;
+}
+.digest-head .from-meta { line-height: 1.2; }
+.digest-head .from-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.digest-head .from-email { font-size: 11.5px; color: var(--text-4); font-family: var(--font-mono); }
+.digest-head .stamp { font-size: 11px; color: var(--text-4); font-family: var(--font-mono); }
+
+.digest-subj {
+  padding: 16px 18px 6px;
+  border-bottom: 1px solid var(--hairline);
+}
+.digest-subj .subj {
+  font-family: var(--font-serif); font-weight: 700; font-size: 17px;
+  letter-spacing: -0.01em; color: var(--text);
+  margin-bottom: 4px;
+}
+.digest-subj .meta { font-size: 12px; color: var(--text-3); font-family: var(--font-mono); }
+
+.digest-rows { padding: 6px 0; }
+.digest-row {
+  display: grid; grid-template-columns: 1fr auto;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--hairline);
+  gap: 12px;
+  align-items: center;
+  position: relative;
+}
+.digest-row:last-child { border-bottom: none; }
+.digest-row:hover { background: var(--accent-bg); }
+.digest-row .src {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 4px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.digest-row .src::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+}
+.digest-row .title { font-size: 14.5px; font-weight: 600; color: var(--text); margin-bottom: 4px; line-height: 1.35; }
+.digest-row .meta { font-size: 12px; color: var(--text-3); display: flex; gap: 10px; flex-wrap: wrap; }
+.digest-row .meta .amt { font-family: var(--font-mono); color: var(--text-2); }
+.digest-row .match {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
+.match-badge {
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 600;
+  padding: 4px 10px;
+  background: var(--accent-bg-2);
+  color: var(--accent);
+  border-radius: 6px;
+  border: 1px solid var(--accent-border);
+  white-space: nowrap;
+}
+.match-badge.green { color: var(--green); background: rgba(62,207,142,0.12); border-color: rgba(62,207,142,0.25); }
+.digest-row .status {
+  font-size: 10.5px; font-family: var(--font-mono);
+  color: var(--text-4); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.digest-foot {
+  padding: 12px 18px;
+  font-size: 11.5px; color: var(--text-4);
+  background: var(--bg-2);
+  border-top: 1px solid var(--hairline);
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+/* ─── The problem ─── */
+section.problem { padding: 90px 0; border-top: 1px solid var(--hairline); }
+.section-head { text-align: center; margin-bottom: 56px; }
+.section-head .lede { margin: 14px auto 0; }
+.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.problem-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  transition: border-color 0.18s, transform 0.18s;
+}
+.problem-card:hover { border-color: var(--accent-border); transform: translateY(-2px); }
+.problem-card .icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  display: grid; place-items: center;
+  font-size: 22px;
+  margin-bottom: 18px;
+}
+.problem-card h3 { font-size: 21px; margin-bottom: 12px; }
+.problem-card p { color: var(--text-3); font-size: 15.5px; line-height: 1.65; }
+
+/* ─── How it works ─── */
+section.how { padding: 90px 0; border-top: 1px solid var(--hairline); background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%); }
+.steps {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  position: relative;
+  margin-top: 18px;
+}
+.step {
+  padding: 32px 24px 28px 0;
+  position: relative;
+}
+.step + .step { padding-left: 28px; border-left: 1px solid var(--hairline); }
+.step .num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 14px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.step .num::before {
+  content: ""; width: 30px; height: 30px;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 15px;
+}
+.step:nth-child(1) .num::before { content: "1"; line-height: 28px; text-align: center; }
+.step:nth-child(2) .num::before { content: "2"; line-height: 28px; text-align: center; }
+.step:nth-child(3) .num::before { content: "3"; line-height: 28px; text-align: center; }
+.step:nth-child(4) .num::before { content: "4"; line-height: 28px; text-align: center; }
+.step h3 { font-size: 19px; margin-bottom: 10px; }
+.step p { color: var(--text-3); font-size: 14.5px; line-height: 1.6; }
+
+/* ─── Sources ─── */
+section.sources { padding: 90px 0; border-top: 1px solid var(--hairline); }
+.sources-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+}
+.source-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 24px;
+}
+.source-card h3 {
+  font-size: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hairline);
+  font-family: var(--font-serif);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.source-card h3 .tag {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-4); font-weight: 400; letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.source-list { display: flex; flex-direction: column; gap: 14px; }
+.source-item {
+  display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: flex-start;
+}
+.source-item .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  margin-top: 9px;
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.source-item .text { font-size: 14.5px; line-height: 1.55; }
+.source-item .name { color: var(--text); font-weight: 600; font-family: var(--font-mono); font-size: 13.5px; }
+.source-item .desc { color: var(--text-3); display: block; margin-top: 2px; }
+
+/* ─── Workspace 2x2 ─── */
+section.workspace { padding: 90px 0; border-top: 1px solid var(--hairline); background: linear-gradient(180deg, var(--bg-2), var(--bg)); }
+.workspace-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+}
+.workspace-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 32px 30px;
+  display: grid; grid-template-columns: 56px 1fr; gap: 22px;
+  align-items: flex-start;
+}
+.workspace-card .icon {
+  width: 56px; height: 56px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  display: grid; place-items: center;
+  font-size: 26px;
+}
+.workspace-card h3 { font-size: 18px; margin-bottom: 8px; }
+.workspace-card p { color: var(--text-3); font-size: 15px; line-height: 1.6; }
+
+/* ─── Honest positioning — statement of principles ─── */
+section.honest { padding: 90px 0; border-top: 1px solid var(--hairline); }
+.honest-card {
+  background: linear-gradient(135deg, var(--surface-2) 0%, var(--surface) 100%);
+  border: 1px solid var(--accent-border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 48px 56px;
+  max-width: 900px; margin: 0 auto;
+  position: relative;
+}
+.honest-card::before {
+  content: "“";
+  position: absolute;
+  font-family: var(--font-serif);
+  font-size: 120px; line-height: 1;
+  color: var(--accent);
+  opacity: 0.18;
+  top: 20px; left: 28px;
+  pointer-events: none;
+}
+.honest-card h2 { font-size: 30px; margin-bottom: 24px; letter-spacing: -0.015em; }
+.honest-card .body p { font-size: 16.5px; line-height: 1.7; color: var(--text-2); margin-bottom: 14px; }
+.honest-card .body p em {
+  font-style: italic;
+  color: var(--text);
+  font-family: var(--font-serif);
+}
+.honest-card .body p strong {
+  font-family: var(--font-serif);
+  color: var(--accent);
+  font-weight: 700;
+  font-style: italic;
+}
+.honest-card .sign {
+  margin-top: 26px; padding-top: 22px;
+  border-top: 1px solid var(--hairline);
+  font-size: 13.5px; color: var(--text-3);
+  font-family: var(--font-mono);
+  display: flex; align-items: center; gap: 10px;
+}
+.honest-card .sign::before { content: "—"; color: var(--accent); }
+
+/* ─── Pricing ─── */
+section.pricing { padding: 90px 0; border-top: 1px solid var(--hairline); background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%); }
+.price-card {
+  max-width: 620px; margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg);
+  padding: 44px 48px;
+  position: relative;
+  box-shadow: 0 36px 80px rgba(0,0,0,0.4), 0 0 0 6px rgba(245, 165, 36, 0.04);
+}
+.price-card::before {
+  content: "Single tier"; position: absolute;
+  top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: #0E1219;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.price-card .name { font-family: var(--font-serif); font-size: 28px; margin-bottom: 6px; }
+.price-card .desc { color: var(--text-3); font-size: 15px; margin-bottom: 26px; }
+.price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 28px; padding-bottom: 26px; border-bottom: 1px solid var(--hairline); }
+.price-row .amt {
+  font-family: var(--font-serif);
+  font-size: 56px; font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.price-row .amt .currency { color: var(--accent); }
+.price-row .per { color: var(--text-3); font-size: 16px; }
+.price-list { display: flex; flex-direction: column; gap: 11px; margin-bottom: 16px; }
+.price-list .item {
+  display: grid; grid-template-columns: 18px 1fr; gap: 12px; font-size: 15.5px;
+}
+.price-list .item .check { color: var(--accent); font-weight: 700; font-size: 14px; padding-top: 4px; }
+.price-list .item .cross { color: var(--text-4); font-weight: 700; padding-top: 4px; }
+.price-list.excluded .item { color: var(--text-4); }
+.price-list.excluded .item .text { color: var(--text-4); }
+.price-divider { font-family: var(--font-mono); font-size: 11px; color: var(--text-4); letter-spacing: 0.14em; text-transform: uppercase; margin: 20px 0 12px; }
+.price-card .btn-primary { width: 100%; justify-content: center; margin-top: 22px; }
+.price-foot { text-align: center; margin-top: 18px; color: var(--text-4); font-size: 13px; font-style: italic; font-family: var(--font-serif); }
+
+/* ─── Built by operator ─── */
+section.operator { padding: 90px 0; border-top: 1px solid var(--hairline); }
+.operator-grid {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 60px;
+  align-items: flex-start;
+}
+.operator-quote {
+  font-family: var(--font-serif);
+  font-size: 19.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+  font-style: italic;
+  padding-left: 28px;
+  border-left: 3px solid var(--accent);
+}
+.operator-quote p { margin-bottom: 18px; }
+.operator-quote p:first-child::first-letter {
+  font-size: 56px; font-family: var(--font-serif);
+  float: left; line-height: 0.9; padding: 6px 10px 0 0;
+  color: var(--accent); font-style: normal; font-weight: 700;
+}
+.operator-attribution {
+  margin-top: 28px;
+  font-size: 14px; color: var(--text-3);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.operator-attribution .name { color: var(--text); font-weight: 600; }
+
+.credentials {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 22px;
+}
+.credentials h4 {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+.cred-list { display: flex; flex-direction: column; gap: 12px; }
+.cred-item {
+  display: grid; grid-template-columns: 16px 1fr; gap: 12px;
+  font-size: 14.5px; color: var(--text-2);
+  align-items: baseline;
+}
+.cred-item .badge {
+  width: 8px; height: 8px; border-radius: 2px;
+  background: var(--accent);
+  align-self: center;
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+/* ─── FAQ ─── */
+section.faq { padding: 90px 0; border-top: 1px solid var(--hairline); background: linear-gradient(180deg, var(--bg-2), var(--bg)); }
+.faq-list { display: flex; flex-direction: column; gap: 0; max-width: 880px; margin: 0 auto; }
+.faq-item {
+  border-bottom: 1px solid var(--hairline);
+}
+.faq-item:first-child { border-top: 1px solid var(--hairline); }
+.faq-q {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 18px; align-items: center;
+  width: 100%;
+  padding: 24px 4px;
+  text-align: left;
+  font-family: var(--font-serif);
+  font-size: 19px; font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  transition: color 0.15s;
+}
+.faq-q:hover { color: var(--accent); }
+.faq-q.open { color: var(--accent); }
+.faq-chev {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 700;
+  transition: transform 0.2s;
+  font-family: var(--font-sans);
+}
+.faq-q.open .faq-chev { transform: rotate(45deg); }
+.faq-a {
+  font-size: 15.5px; color: var(--text-3); line-height: 1.7;
+  padding: 0 4px 28px;
+  max-width: 780px;
+}
+
+/* ─── Final CTA ─── */
+section.final {
+  padding: 110px 0 120px;
+  border-top: 1px solid var(--hairline);
+  position: relative;
+  text-align: center;
+  background: radial-gradient(900px circle at 50% 0%, rgba(245, 165, 36, 0.16), transparent 60%), var(--bg);
+}
+.final h2 {
+  font-size: clamp(34px, 5vw, 56px);
+  margin-bottom: 18px;
+  letter-spacing: -0.02em;
+}
+.final .lede { margin: 0 auto 36px; }
+.final .tagline {
+  margin-top: 30px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--accent);
+}
+
+/* ─── Footer ─── */
+footer.foot {
+  padding: 36px 0 40px;
+  border-top: 1px solid var(--hairline);
+  font-size: 13.5px;
+  color: var(--text-4);
+}
+.foot-row { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 14px; flex-wrap: wrap; }
+.foot-links { display: flex; gap: 22px; }
+.foot-links a:hover { color: var(--text-2); }
+.foot-brand { font-family: var(--font-serif); font-weight: 700; color: var(--text-2); }
+.foot-brand .accent-i { color: var(--accent); font-style: italic; }
+.foot-disclaimer { font-size: 11.5px; color: var(--text-4); font-style: italic; max-width: 880px; line-height: 1.55; }
+
+/* ─── Lead modal ─── */
+.lead-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: none; align-items: center; justify-content: center;
+  padding: 20px;
+  background: rgba(0,0,0,0.70);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.lead-overlay.open { display: flex; }
+.lead-modal {
+  position: relative; width: 100%; max-width: 460px;
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg);
+  padding: 30px 30px 26px;
+  box-shadow: 0 36px 80px rgba(0,0,0,0.5), 0 0 0 6px rgba(245, 165, 36, 0.05);
+}
+.lead-close {
+  position: absolute; top: 14px; right: 16px;
+  color: var(--text-3); font-size: 24px; line-height: 1;
+}
+.lead-close:hover { color: var(--text); }
+.lead-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 8px;
+}
+.lead-eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.lead-modal h3 { font-size: 25px; margin-bottom: 6px; }
+.lead-modal .sub { color: var(--text-3); font-size: 14px; margin-bottom: 18px; line-height: 1.55; }
+.lead-form { display: flex; flex-direction: column; gap: 11px; }
+.lead-form input, .lead-form textarea {
+  width: 100%;
+  background: rgba(10,13,18,0.6);
+  border: 1px solid var(--hairline-2);
+  border-radius: 8px;
+  padding: 11px 13px;
+  font-family: var(--font-sans); font-size: 14.5px;
+  color: var(--text);
+}
+.lead-form input::placeholder, .lead-form textarea::placeholder { color: var(--text-4); }
+.lead-form input:focus, .lead-form textarea:focus { outline: none; border-color: var(--accent-border); }
+.lead-form textarea { resize: none; }
+.lead-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.lead-form .btn-primary { width: 100%; justify-content: center; margin-top: 6px; }
+.lead-error { color: var(--red); font-size: 13px; min-height: 0; }
+.lead-foot {
+  text-align: center; margin-top: 4px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-4);
+}
+.lead-success { text-align: center; padding: 14px 0 6px; }
+.lead-success .check {
+  width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 50%;
+  background: rgba(62,207,142,0.12); border: 1px solid rgba(62,207,142,0.3);
+  display: grid; place-items: center; font-size: 24px; color: var(--green);
+}
+.lead-success h3 { margin-bottom: 10px; }
+.lead-success p { color: var(--text-3); font-size: 14.5px; line-height: 1.6; }
+
+/* ─── Responsive ─── */
+@media (max-width: 980px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+  .digest-card { transform: none; }
+  .three-col { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr; }
+  .step + .step { padding-left: 0; border-left: none; border-top: 1px solid var(--hairline); padding-top: 28px; margin-top: 4px; }
+  .sources-grid { grid-template-columns: 1fr; }
+  .workspace-grid { grid-template-columns: 1fr; }
+  .operator-grid { grid-template-columns: 1fr; gap: 36px; }
+  .honest-card { padding: 34px 28px; }
+  .nav-links { display: none; }
+  section.hero { padding: 56px 0 60px; }
+  section.problem, section.how, section.sources, section.workspace, section.honest, section.pricing, section.operator, section.faq { padding: 64px 0; }
+  section.final { padding: 70px 0 80px; }
+  .price-card { padding: 36px 28px; }
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<!-- ─── NAV ─── -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark">G</span>
+      <span class="brand-name">Grant<span class="accent-i">IQ</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="#how">How It Works</a>
+      <a href="#sources">What We Scout</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/" data-cta="signin">Sign In</a>
+    </div>
+    <button class="nav-cta" type="button" data-cta="trial">Get Access — $197/mo</button>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero" id="top">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">📡 Daily AI Grant Scouting · Federal · State · Foundation</span>
+      <h1 class="hero-h1">Your agency is leaving<br/><em>grant money</em> on the table.</h1>
+      <p class="lede">
+        GrantIQ scans federal agencies (HRSA, CMS, ONC, SBIR/STTR, SAMHSA), Georgia DCH, and foundation sources every day —
+        and delivers a match-scored opportunity list directly to your inbox. The AI drafts the narrative.
+        You review and submit. Funding you'd never find on your own. Done.
+      </p>
+      <div class="hero-tagline">
+        <span class="ornament">✦</span>
+        We find them. We draft them. You submit.
+      </div>
+      <div class="hero-ctas">
+        <button class="btn btn-primary btn-lg" type="button" data-cta="trial">Get Access — $197/month</button>
+        <button class="btn btn-ghost btn-lg" type="button" data-cta="demo">Book a Demo</button>
+        <a class="btn btn-ghost btn-lg" href="#how">See a Sample Scout Report ↓</a>
+      </div>
+    </div>
+
+    <!-- Email mockup -->
+    <div class="digest-card" aria-hidden="true">
+      <div class="digest-head">
+        <div class="from">
+          <div class="avatar">G</div>
+          <div class="from-meta">
+            <div class="from-name">GrantIQ Daily Digest</div>
+            <div class="from-email">digest@grantiq.holigenix.com</div>
+          </div>
+        </div>
+        <div class="stamp">May 19, 2026 · 7:02 AM</div>
+      </div>
+      <div class="digest-subj">
+        <div class="subj">3 New Opportunities Match Your Profile</div>
+        <div class="meta">Scanned 1,418 sources · 12 reviewed · 3 above your match threshold</div>
+      </div>
+      <div class="digest-rows">
+
+        <div class="digest-row">
+          <div>
+            <div class="src">HRSA · Health Workforce</div>
+            <div class="title">Rural Pediatric Care Workforce Expansion Grant</div>
+            <div class="meta">
+              <span class="amt">$50,000 – $250,000</span>
+              <span>Deadline: June 30, 2026</span>
+              <span class="status">Open</span>
+            </div>
+          </div>
+          <div class="match">
+            <span class="match-badge green">94% Match</span>
+            <span class="status">SDVOSB preferred</span>
+          </div>
+        </div>
+
+        <div class="digest-row">
+          <div>
+            <div class="src">Georgia DCH · Community Health</div>
+            <div class="title">Home and Community-Based Services Capacity Building</div>
+            <div class="meta">
+              <span class="amt">$75,000 – $180,000</span>
+              <span>Deadline: July 15, 2026</span>
+              <span class="status">Open · Rolling</span>
+            </div>
+          </div>
+          <div class="match">
+            <span class="match-badge">88% Match</span>
+            <span class="status">PDN-aligned</span>
+          </div>
+        </div>
+
+        <div class="digest-row">
+          <div>
+            <div class="src">RWJF · Foundation</div>
+            <div class="title">Pioneering Ideas — Brief Proposal Window</div>
+            <div class="meta">
+              <span class="amt">$25,000 – $100,000</span>
+              <span>Deadline: Rolling</span>
+              <span class="status">Brief proposal</span>
+            </div>
+          </div>
+          <div class="match">
+            <span class="match-badge">82% Match</span>
+            <span class="status">Low doc burden</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="digest-foot">
+        Tap any opportunity to view the full record and request an AI-drafted narrative →
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PROBLEM ─── -->
+<section class="problem">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow">The reality</div>
+      <h2 class="section-h">Grant funding exists for your agency.<br/>Nobody is telling you about it.</h2>
+    </div>
+    <div class="three-col">
+
+      <div class="problem-card">
+        <div class="icon">🔍</div>
+        <h3>Finding grants is a full-time job</h3>
+        <p>Federal grant databases like SAM.gov, Grants.gov, HRSA, and CMS publish hundreds of opportunities per week. Knowing which ones your agency qualifies for requires hours of manual research that most operators don't have.</p>
+      </div>
+
+      <div class="problem-card">
+        <div class="icon">✍️</div>
+        <h3>Drafting narratives costs thousands</h3>
+        <p>Grant writers charge $75–$200/hour. A single application narrative can take 15–20 hours to draft. Most small agencies either skip grants entirely or pay consultants they can't afford.</p>
+      </div>
+
+      <div class="problem-card">
+        <div class="icon">⏰</div>
+        <h3>You miss deadlines you didn't know existed</h3>
+        <p>The most damaging part of grant management isn't losing an application — it's never knowing the opportunity was open in the first place. GrantIQ's daily scout fixes that.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ─── -->
+<section class="how" id="how">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow">How GrantIQ works</div>
+      <h2 class="section-h">Daily intelligence. Ready-to-submit drafts.<br/>You decide what to pursue.</h2>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="num">Step One</div>
+        <h3>Daily AI Scout</h3>
+        <p>Every morning, GrantIQ scans federal (HRSA, CMS, ONC, SBIR/STTR, SAMHSA), Georgia DCH, and foundation sources for new and updated opportunities. Each result is matched against your agency profile and scored 0–100%.</p>
+      </div>
+
+      <div class="step">
+        <div class="num">Step Two</div>
+        <h3>Match Scoring + Digest</h3>
+        <p>Opportunities above your match threshold land in your daily email digest. You see the source, award range, deadline, eligibility requirements, and your match score — all in one email. No login required.</p>
+      </div>
+
+      <div class="step">
+        <div class="num">Step Three</div>
+        <h3>AI-Drafted Narrative</h3>
+        <p>When you identify an opportunity worth pursuing, GrantIQ generates a full draft application narrative based on your agency's credentials, services, certifications, and geography. You review, edit, and make it yours.</p>
+      </div>
+
+      <div class="step">
+        <div class="num">Step Four</div>
+        <h3>You Submit</h3>
+        <p>The final submission is always yours. GrantIQ equips you with the intelligence and the draft — you own the relationship with the funder and the decision to apply.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── SOURCES ─── -->
+<section class="sources" id="sources">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow">What we scout</div>
+      <h2 class="section-h">Every relevant funding source. Scanned daily.</h2>
+      <p class="lede">GrantIQ doesn't just monitor Grants.gov. We scan across the full ecosystem of federal agencies, state programs, and foundation sources relevant to home health, pediatric care, workforce development, and veteran-owned businesses.</p>
+    </div>
+
+    <div class="sources-grid">
+
+      <div class="source-card">
+        <h3>Federal Agencies <span class="tag">7 sources · daily</span></h3>
+        <div class="source-list">
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">HRSA</span><span class="desc">Health Resources & Services Administration — primary healthcare workforce and rural health grants</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">CMS</span><span class="desc">Centers for Medicare & Medicaid Services — care quality, value-based care, technology adoption</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">ONC</span><span class="desc">Office of the National Coordinator for Health IT — interoperability and health IT</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">SBIR/STTR</span><span class="desc">Small Business Innovation Research — tech development and AI in healthcare</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">SAMHSA</span><span class="desc">Substance Abuse and Mental Health Services Administration — behavioral health integration</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">VA</span><span class="desc">Department of Veterans Affairs — veteran healthcare service providers</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">HHS</span><span class="desc">Department of Health and Human Services — broad healthcare service delivery</span></div></div>
+        </div>
+      </div>
+
+      <div class="source-card">
+        <h3>State Sources <span class="tag">3 sources · daily</span></h3>
+        <div class="source-list">
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">Georgia DCH</span><span class="desc">Division of Community Health — state Medicaid and community health programs</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">Georgia DPH</span><span class="desc">Public Health — workforce and community health grants</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">Georgia DCA</span><span class="desc">Community Affairs — community development and small business support</span></div></div>
+        </div>
+      </div>
+
+      <div class="source-card">
+        <h3>Foundation Sources <span class="tag">curated · weekly</span></h3>
+        <div class="source-list">
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">Robert Wood Johnson Foundation</span><span class="desc">Health system innovation and equity-focused funding</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">W.K. Kellogg Foundation</span><span class="desc">Children's health and family well-being</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">The Health Foundation for Western and Central NY</span><span class="desc">Regional model · adaptable to other geographies</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">Community Foundation for Greater Atlanta</span><span class="desc">Atlanta-area community health funding</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">Additional foundations</span><span class="desc">Matched to pediatric health, nursing, and veteran-owned business focus</span></div></div>
+        </div>
+      </div>
+
+      <div class="source-card">
+        <h3>Set-Aside Opportunities <span class="tag">priority filter</span></h3>
+        <div class="source-list">
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">SDVOSB set-asides</span><span class="desc">Holigenix-profile agencies score competitively here on Rodney's SDVOSB status</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">WOSB set-asides</span><span class="desc">Women-Owned Small Business contract opportunities</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">8(a) program-adjacent</span><span class="desc">Federal contracting program-adjacent grant opportunities</span></div></div>
+          <div class="source-item"><div class="dot"></div><div class="text"><span class="name">Minority-owned small business grants</span><span class="desc">State and federal MBE-targeted funding</span></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── WORKSPACE ─── -->
+<section class="workspace">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow">What you get</div>
+      <h2 class="section-h">Your own grant intelligence workspace — set up for you.</h2>
+    </div>
+    <div class="workspace-grid">
+
+      <div class="workspace-card">
+        <div class="icon">📁</div>
+        <div>
+          <h3>Dedicated Google Drive workspace</h3>
+          <p>Every client gets a private Google Drive folder — organized by opportunity source, deadline, and application status. All your drafts, research, and correspondence in one place.</p>
+        </div>
+      </div>
+
+      <div class="workspace-card">
+        <div class="icon">📧</div>
+        <div>
+          <h3>Daily digest email</h3>
+          <p>A formatted daily email delivering your matched opportunities directly to your inbox. Match score, award range, deadline, and a direct link to the full opportunity — every morning.</p>
+        </div>
+      </div>
+
+      <div class="workspace-card">
+        <div class="icon">📝</div>
+        <div>
+          <h3>AI-drafted application narratives</h3>
+          <p>When you're ready to pursue an opportunity, GrantIQ generates a full narrative draft in your Drive workspace. Formatted to the funder's requirements. You edit and submit.</p>
+        </div>
+      </div>
+
+      <div class="workspace-card">
+        <div class="icon">🗓️</div>
+        <div>
+          <h3>Deadline tracking + alerts</h3>
+          <p>Upcoming deadlines for opportunities you're pursuing are tracked and flagged with advance notice — 30 days, 14 days, 7 days. No more missed windows.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── HONEST POSITIONING ─── -->
+<section class="honest">
+  <div class="container">
+    <div class="honest-card">
+      <h2>What GrantIQ is. And what it isn't.</h2>
+      <div class="body">
+        <p>We want to be straight with you about what GrantIQ does and doesn't do.</p>
+        <p><strong>What we do:</strong> <em>Scan every relevant federal, state, and foundation source daily. Score opportunities against your agency profile. Deliver a prioritized digest to your inbox. Draft application narratives using AI that you review, edit, and submit.</em></p>
+        <p><strong>What we don't do:</strong> <em>Submit applications on your behalf. Guarantee awards. Replace a specialized grant writer for highly competitive federal programs.</em></p>
+        <p>The value is the intelligence and the draft. Most agencies never pursue grants because finding them and drafting them takes too long and costs too much. GrantIQ eliminates both barriers. What you do with the opportunities is up to you.</p>
+      </div>
+      <div class="sign">Rodney Williams · Holigenix Healthcare LLC</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PRICING ─── -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow">Pricing</div>
+      <h2 class="section-h">One tier. Everything included. No upsell.</h2>
+      <p class="lede" style="margin-left:auto;margin-right:auto;">GrantIQ is a single flat rate. Every client gets the full daily scout, match scoring, AI-drafted narratives, Google Drive workspace, and daily digest email.</p>
+    </div>
+
+    <div class="price-card">
+      <div class="name">GrantIQ Access</div>
+      <div class="desc">Daily AI grant scouting + drafted narratives for one agency profile.</div>
+      <div class="price-row">
+        <span class="amt"><span class="currency">$</span>197</span>
+        <span class="per">/ month · cancel anytime</span>
+      </div>
+
+      <div class="price-divider">What's included</div>
+      <div class="price-list">
+        <div class="item"><span class="check">✓</span><span class="text">Daily AI grant scout across all federal, state, and foundation sources</span></div>
+        <div class="item"><span class="check">✓</span><span class="text">Match-scored opportunity list (new opportunities scored against your agency profile)</span></div>
+        <div class="item"><span class="check">✓</span><span class="text">AI-drafted application narratives — unlimited, one per opportunity you pursue</span></div>
+        <div class="item"><span class="check">✓</span><span class="text">Dedicated Google Drive workspace per client</span></div>
+        <div class="item"><span class="check">✓</span><span class="text">Daily digest email — delivered every morning</span></div>
+        <div class="item"><span class="check">✓</span><span class="text">Deadline tracking and advance alerts (30 / 14 / 7-day warnings)</span></div>
+        <div class="item"><span class="check">✓</span><span class="text"><strong style="color:var(--accent);font-weight:600;">New:</strong> SDVOSB and veteran-owned set-aside opportunity filtering</span></div>
+      </div>
+
+      <div class="price-divider">What's not included</div>
+      <div class="price-list excluded">
+        <div class="item"><span class="cross">×</span><span class="text">Done-for-you submission (you submit — we draft)</span></div>
+        <div class="item"><span class="cross">×</span><span class="text">Grant writing guarantee</span></div>
+        <div class="item"><span class="cross">×</span><span class="text">Upfront setup fee</span></div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" type="button" data-cta="trial">Get Access — $197/month</button>
+
+      <div class="price-foot">Cancel anytime. Access starts within 24 hours of sign-up. Onboarding takes 15 minutes — just your agency profile and email address.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── BUILT BY OPERATOR ─── -->
+<section class="operator">
+  <div class="container">
+    <div class="section-head" style="text-align:left;">
+      <div class="section-eyebrow">Built by an operator</div>
+      <h2 class="section-h">Honest about what this is.</h2>
+    </div>
+    <div class="operator-grid">
+
+      <div>
+        <div class="operator-quote">
+          <p>I want to be honest with you: I haven't personally won a grant. GrantIQ doesn't change that.</p>
+          <p>What GrantIQ does is solve the problem I had when I tried to research grants myself — which is that the landscape is enormous, the deadlines are scattered across dozens of databases, and drafting a narrative from scratch is exhausting.</p>
+          <p>The AI solves the research and drafting problem. The knowledge gap is gone. What's left is an agency owner who knows exactly what opportunities exist for their business — and has a draft ready to edit and submit.</p>
+          <p>That's what I'm selling. The intelligence and the draft. The decision and the submission are always yours.</p>
+        </div>
+        <div class="operator-attribution">
+          <span class="name">Rodney Williams</span> · CEO, Holigenix Healthcare LLC<br/>
+          SDVOSB Certified · Veteran-Owned · Atlanta, Georgia
+        </div>
+      </div>
+
+      <div class="credentials">
+        <h4>Holigenix Credentials</h4>
+        <div class="cred-list">
+          <div class="cred-item"><span class="badge"></span><span>SDVOSB Active thru Feb 2028</span></div>
+          <div class="cred-item"><span class="badge"></span><span>Veteran-Owned Small Business</span></div>
+          <div class="cred-item"><span class="badge"></span><span>GAPP-Approved PDN Agency</span></div>
+          <div class="cred-item"><span class="badge"></span><span>SAM.gov Active thru April 2027</span></div>
+          <div class="cred-item"><span class="badge"></span><span>Atlanta, Georgia</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── FAQ ─── -->
+<section class="faq">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow">Questions</div>
+      <h2 class="section-h">Frequently asked.</h2>
+    </div>
+    <div class="faq-list" id="faq-list">
+
+      <div class="faq-item">
+        <button class="faq-q" data-faq>
+          Do I need to know anything about grants to use GrantIQ?
+          <span class="faq-chev">+</span>
+        </button>
+        <div class="faq-a" hidden>
+          No. GrantIQ is designed for agency operators who have never pursued a grant before. The daily digest tells you what exists and whether you likely qualify. The AI narrative draft gives you a starting point that would otherwise require 15+ hours of writing. You review, adjust, and submit.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" data-faq>
+          How does the AI know which grants to match to my agency?
+          <span class="faq-chev">+</span>
+        </button>
+        <div class="faq-a" hidden>
+          During onboarding, you provide your agency profile — state, services offered, certifications (SDVOSB, WOSB, minority-owned, etc.), patient population, annual revenue range, and geographic service area. GrantIQ's scout engine uses this profile to score every opportunity it finds.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" data-faq>
+          What if I want to pursue an opportunity that's more complex than the AI draft handles?
+          <span class="faq-chev">+</span>
+        </button>
+        <div class="faq-a" hidden>
+          For highly competitive federal grants (like HRSA Health Center Program funding), a specialized human grant writer may be necessary. GrantIQ will flag these and provide you with everything a grant writer would need to do the engagement efficiently — saving you consulting hours even if you hire additional help.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" data-faq>
+          Does this work for agencies outside Georgia?
+          <span class="faq-chev">+</span>
+        </button>
+        <div class="faq-a" hidden>
+          Yes. The federal sources — HRSA, CMS, ONC, SBIR/STTR, SAMHSA, VA, HHS — are national. The Georgia DCH and Georgia DPH sources are state-specific and most valuable for Georgia-based agencies. If you're in another state, we can configure the scout to include your state's relevant health department grant sources.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" data-faq>
+          Is my agency information kept confidential?
+          <span class="faq-chev">+</span>
+        </button>
+        <div class="faq-a" hidden>
+          Yes. Your agency profile and Google Drive workspace are private to your account. GrantIQ does not share client information across accounts.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" data-faq>
+          How quickly does my workspace get set up?
+          <span class="faq-chev">+</span>
+        </button>
+        <div class="faq-a" hidden>
+          Typically within 24 hours of sign-up. Onboarding is a 15-minute process — you provide your agency profile, and your dedicated Google Drive workspace is configured and your first daily digest arrives the following morning.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── FINAL CTA ─── -->
+<section class="final" id="cta">
+  <div class="container-narrow">
+    <h2>Stop leaving federal and state funding<br/>on the table.</h2>
+    <p class="lede" style="margin-left:auto;margin-right:auto;">Your agency's certifications, patient population, and service model qualify you for funding that most operators never pursue — because they don't know it exists. GrantIQ changes that. Starting tomorrow morning.</p>
+    <div class="hero-ctas" style="justify-content:center;">
+      <button class="btn btn-primary btn-lg" type="button" data-cta="trial" style="font-size:18px;padding:18px 36px;">Get Access — $197/month</button>
+      <button class="btn btn-ghost btn-lg" type="button" data-cta="demo" style="font-size:18px;padding:18px 36px;">Book a Demo</button>
+    </div>
+    <div class="tagline">✦ We find them. We draft them. You submit. ✦</div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer class="foot">
+  <div class="container">
+    <div class="foot-row">
+      <div class="foot-brand">Grant<span class="accent-i">IQ</span> · A Holigenix Healthcare Platform</div>
+      <div class="foot-links">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="mailto:admin@holigenixhealthcare.com">Contact</a>
+        <a href="https://operatorhq.agency">Back to Operator HQ</a>
+      </div>
+    </div>
+    <div class="foot-row" style="border-top:1px solid var(--hairline); padding-top:18px;">
+      <div>© 2026 Holigenix Healthcare LLC · Atlanta, Georgia</div>
+    </div>
+    <div class="foot-disclaimer">
+      GrantIQ provides grant discovery and AI-assisted drafting services. Holigenix Healthcare LLC does not guarantee grant awards or submit applications on behalf of clients.
+    </div>
+  </div>
+</footer>
+
+<!-- ─── LEAD MODAL ─── -->
+<div class="lead-overlay" id="lead-overlay" aria-hidden="true">
+  <div class="lead-modal" role="dialog" aria-modal="true" aria-labelledby="lead-title">
+    <button class="lead-close" type="button" id="lead-close" aria-label="Close">×</button>
+
+    <div id="lead-form-wrap">
+      <div class="lead-eyebrow">GrantIQ Access</div>
+      <h3 id="lead-title">Get Access</h3>
+      <p class="sub" id="lead-sub">Tell us about your agency and we'll get you set up. Invite-only — we'll reach out within one business day.</p>
+
+      <form class="lead-form" id="lead-form" novalidate>
+        <!-- honeypot: hidden from humans, bots fill it -->
+        <input class="lead-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <input id="lf-name"    type="text"  placeholder="Your name *" autocomplete="name" required />
+        <input id="lf-agency"  type="text"  placeholder="Agency / company name" autocomplete="organization" />
+        <input id="lf-email"   type="email" placeholder="Work email *" autocomplete="email" required />
+        <input id="lf-phone"   type="tel"   placeholder="Phone" autocomplete="tel" />
+        <textarea id="lf-message" rows="2" placeholder="Anything we should know? (optional)"></textarea>
+        <div class="lead-error" id="lead-error" role="alert"></div>
+        <button class="btn btn-primary btn-lg" type="submit" id="lead-submit">Request Access</button>
+        <div class="lead-foot">No credit card · We'll reach out within 1 business day</div>
+      </form>
+    </div>
+
+    <div class="lead-success" id="lead-success" hidden>
+      <div class="check">✓</div>
+      <h3>You're on the list</h3>
+      <p id="lead-success-msg">Thanks! We'll reach out shortly to get your agency set up.</p>
+      <button class="btn btn-primary btn-lg" type="button" id="lead-done" style="width:100%;justify-content:center;margin-top:18px;">Done</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ─── Config: one-line change ───────────────────────────────────────────────
+// GoHighLevel/LeadConnector booking widget — shared with Holigenix Growth Engine.
+const BOOKING_URL = "https://api.leadconnectorhq.com/widget/booking/dmPsnxC9sJDpHmToOQXm";
+const LOGIN_URL   = "/";   // the GrantIQ Command Center (portal access gate)
+
+// ─── FAQ accordion ──────────────────────────────────────────────────────────
+document.querySelectorAll("[data-faq]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const ans = btn.nextElementSibling;
+    const isOpen = btn.classList.toggle("open");
+    ans.hidden = !isOpen;
+  });
+});
+
+// ─── Centralized CTA routing ─────────────────────────────────────────────────
+// trial → lead modal · demo/walkthrough → booking · signin → portal
+const overlay = document.getElementById("lead-overlay");
+const COPY = {
+  trial:       { title: "Get Access",        sub: "Tell us about your agency and we'll get you set up. Invite-only — we'll reach out within one business day.", cta: "Request Access" },
+  demo:        { title: "Book a Demo",       sub: "See GrantIQ running live. Pick a time and we'll walk you through it.", cta: "Request a Demo" },
+  walkthrough: { title: "Book a Walkthrough", sub: "We'll reach out to schedule a live walkthrough for your agency.", cta: "Request a Walkthrough" },
+};
+let currentInterest = "trial";
+
+function openModal(interest) {
+  currentInterest = interest || "trial";
+  const c = COPY[currentInterest] || COPY.trial;
+  document.getElementById("lead-title").textContent = c.title;
+  document.getElementById("lead-sub").textContent = c.sub;
+  document.getElementById("lead-submit").textContent = c.cta;
+  document.getElementById("lead-form-wrap").hidden = false;
+  document.getElementById("lead-success").hidden = true;
+  document.getElementById("lead-error").textContent = "";
+  overlay.classList.add("open");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  setTimeout(() => document.getElementById("lf-name").focus(), 50);
+}
+function closeModal() {
+  overlay.classList.remove("open");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-cta]");
+  if (!el) return;
+  const kind = el.getAttribute("data-cta");
+  if (kind === "trial") { e.preventDefault(); openModal("trial"); }
+  else if (kind === "demo" || kind === "walkthrough") { e.preventDefault(); window.open(BOOKING_URL, "_blank", "noopener,noreferrer"); }
+  else if (kind === "signin") { e.preventDefault(); window.location.href = LOGIN_URL; }
+});
+
+document.getElementById("lead-close").addEventListener("click", closeModal);
+document.getElementById("lead-done").addEventListener("click", closeModal);
+overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && overlay.classList.contains("open")) closeModal(); });
+
+// ─── Submit ──────────────────────────────────────────────────────────────────
+document.getElementById("lead-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById("lead-error");
+  const btn = document.getElementById("lead-submit");
+  errEl.textContent = "";
+
+  const payload = {
+    full_name:   document.getElementById("lf-name").value.trim(),
+    agency_name: document.getElementById("lf-agency").value.trim(),
+    email:       document.getElementById("lf-email").value.trim(),
+    phone:       document.getElementById("lf-phone").value.trim(),
+    message:     document.getElementById("lf-message").value.trim(),
+    website:     e.target.querySelector('[name="website"]').value,  // honeypot
+    interest:    currentInterest,
+    source:      "grantiq-sales-page",
+  };
+  if (!payload.full_name || !payload.email) { errEl.textContent = "Name and email are required."; return; }
+
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    const res = await fetch("/api/leads/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { errEl.textContent = data.error || "Something went wrong. Please try again."; return; }
+    document.getElementById("lead-success-msg").textContent =
+      data.message || "Thanks! We'll reach out shortly to get your agency set up.";
+    document.getElementById("lead-form-wrap").hidden = true;
+    document.getElementById("lead-success").hidden = false;
+    document.getElementById("lead-form").reset();
+  } catch {
+    errEl.textContent = "Network error. Please try again.";
+  } finally {
+    btn.disabled = false; btn.textContent = original;
+  }
+});
+</script>
+
+</body>
+</html>
