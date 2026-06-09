@@ -403,7 +403,18 @@ function PipelineView({ orgFilter, focusGrantId, onNav }) {
                             <h5>Certification advantage</h5>
                             <p>{g.advantage}</p>
                             <h5 style={{marginTop:14}}>Source</h5>
-                            <p className="mono" style={{fontSize:11.5}}>{g.source}</p>
+                            {g.url ? (
+                              <p style={{fontSize:12.5, lineHeight:1.5, wordBreak:"break-all"}}>
+                                <a href={g.url} target="_blank" rel="noopener noreferrer"
+                                   style={{color:"var(--accent, #f5a524)", textDecoration:"none"}}
+                                   title={g.url}>
+                                  {window.Helpers.shortHost(g.url)} ↗
+                                </a>
+                                {g.source ? <span className="mono muted" style={{fontSize:11, marginLeft:8}}>via {g.source}</span> : null}
+                              </p>
+                            ) : (
+                              <p className="mono" style={{fontSize:11.5}}>{g.source || "—"}</p>
+                            )}
                             <div style={{display:"flex", gap:8, marginTop:14}}>
                               <button
                                 className="btn btn-primary btn-sm"

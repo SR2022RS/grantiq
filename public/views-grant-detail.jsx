@@ -104,7 +104,18 @@ function GrantDetailView({ grantId, onNav, onSetOrg }) {
             <h5>Cert advantage</h5>
             <p>{grant.advantage}</p>
             <h5 style={{marginTop:14}}>Source</h5>
-            <p className="mono" style={{fontSize:11.5}}>{grant.source}</p>
+            {grant.url ? (
+              <p style={{fontSize:12.5, lineHeight:1.5, wordBreak:"break-all"}}>
+                <a href={grant.url} target="_blank" rel="noopener noreferrer"
+                   style={{color:"var(--accent, #f5a524)", textDecoration:"none"}}
+                   title={grant.url}>
+                  {window.Helpers.shortHost(grant.url)} ↗
+                </a>
+                {grant.source ? <span className="mono muted" style={{fontSize:11, marginLeft:8}}>via {grant.source}</span> : null}
+              </p>
+            ) : (
+              <p className="mono" style={{fontSize:11.5}}>{grant.source || "—"}</p>
+            )}
           </div>
         </div>
       </div>

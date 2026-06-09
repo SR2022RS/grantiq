@@ -98,5 +98,21 @@ function md(s) {
   return { __html: html };
 }
 
+// Compact, human-readable rendering of a grant's source URL.
+// "https://www.comcastrise.com/"                              -> "comcastrise.com"
+// "https://dced.pa.gov/programs/keystone-communities/program" -> "dced.pa.gov/programs/keystone-com…"
+function shortHost(url, maxLen = 44) {
+  if (!url || typeof url !== "string") return "";
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, "");
+    const path = (u.pathname || "/").replace(/\/$/, "");
+    const full = host + path;
+    return full.length > maxLen ? full.slice(0, maxLen - 1) + "…" : full;
+  } catch {
+    return url.length > maxLen ? url.slice(0, maxLen - 1) + "…" : url;
+  }
+}
+
 window.IconSet = I;
-window.Helpers = { relTime, daysUntil, fmtDate, fmtShortDate, matchClass, readinessClass, readinessColor, orgName, orgShort, md };
+window.Helpers = { relTime, daysUntil, fmtDate, fmtShortDate, matchClass, readinessClass, readinessColor, orgName, orgShort, md, shortHost };

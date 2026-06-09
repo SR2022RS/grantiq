@@ -52,6 +52,7 @@ function mapGrant(row, vaultIndex) {
     docs_ready: orgVault.uploaded,
     docs_total: orgVault.total,
     source: row.source || '',
+    url: row.url || '',
     description: row.description || '',
     eligibility: Array.isArray(row.eligibility) ? row.eligibility : (row.eligibility ? [row.eligibility] : []),
     advantage: row.certification_advantage || '',
