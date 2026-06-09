@@ -8,8 +8,12 @@
     {"source": "/k1", "destination": "/k1-upload.html"},
     {"source": "/holigenix-upload", "destination": "/holigenix-upload.html"},
     {"source": "/holigenix", "destination": "/holigenix-upload.html"},
-    {"source": "/landing", "destination": "/landing.html"},
-    {"source": "/get-access", "destination": "/landing.html"}
+    {"source": "/portal", "destination": "/portal.html"},
+    {"source": "/app",    "destination": "/portal.html"}
+  ],
+  "redirects": [
+    {"source": "/landing",    "destination": "/", "permanent": false},
+    {"source": "/get-access", "destination": "/", "permanent": false}
   ],
   "functions": {
     "api/**/*.js": {
