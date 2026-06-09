@@ -253,6 +253,10 @@ function App() {
           <div className="row"><span>API</span><span className="v" style={{color:"var(--green)"}}>● connected</span></div>
           <div className="row"><span>Model</span><span className="v">claude-sonnet</span></div>
           <div className="row"><span>Build</span><span className="v">v2.4.1</span></div>
+          <div className="row" style={{marginTop:6, paddingTop:8, borderTop:"1px solid var(--hairline-2, rgba(255,255,255,0.06))"}}>
+            <span>Session</span>
+            <a className="v" href="/api/auth/logout" style={{color:"var(--accent, #f5a524)", textDecoration:"none"}}>Sign out →</a>
+          </div>
         </div>
       </aside>
 
