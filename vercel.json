@@ -9,7 +9,8 @@
     {"source": "/holigenix-upload", "destination": "/holigenix-upload.html"},
     {"source": "/holigenix", "destination": "/holigenix-upload.html"},
     {"source": "/portal", "destination": "/portal.html"},
-    {"source": "/app",    "destination": "/portal.html"}
+    {"source": "/app",    "destination": "/portal.html"},
+    {"source": "/login",  "destination": "/login.html"}
   ],
   "redirects": [
     {"source": "/landing",    "destination": "/", "permanent": false},
