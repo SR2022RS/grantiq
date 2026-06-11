@@ -223,6 +223,7 @@ function App() {
           <NavItem id="brief"     label="Brief"     icon={I.notes} page={page} onNav={onNav} />
           <NavItem id="kb"        label="Knowledge" icon={I.notes} page={page} onNav={onNav} />
           <NavItem id="vault"     label="Vault"     icon={I.vault} badge={counts.vault}   page={page} onNav={onNav} muted />
+          <NavItem id="budgets"   label="Budgets"   icon={I.budget} page={page} onNav={onNav} />
           <NavItem id="templates" label="Templates" icon={I.notes} page={page} onNav={onNav} />
         </div>
         <div className="nav-group">
@@ -287,6 +288,7 @@ function App() {
           {page === "brief"    && <window.BriefView    orgFilter={orgFilter} />}
           {page === "kb"       && <window.KBView       orgFilter={orgFilter} />}
           {page === "vault"    && <window.VaultView    orgFilter={orgFilter} onSetOrg={setOrgFilter} onNav={onNav} />}
+          {page === "budgets"  && <window.BudgetsView  orgFilter={orgFilter} onNav={onNav} />}
           {page === "templates"&& <window.TemplatesView orgFilter={orgFilter} />}
           {page === "sources"  && <window.SourcesView  orgFilter={orgFilter} />}
           {page === "watchlists" && <window.WatchlistsView orgFilter={orgFilter} onNav={onNav} />}

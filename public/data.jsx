@@ -404,5 +404,47 @@ const GRANT_META = {
   g12: { assignee: "u1",      agent_hours: 0.2,  agent_cost: "$1"  },
 };
 
+// budgetgen agent output — one per pursued grant. Mock for v1; live data will
+// come from supabase budget_templates (see supabase-setup.sql) once wired.
+const BUDGETS = [
+  { id: "bud1", grant_id: "g1", grant_name: "Delaware EDGE Grant — Late Stage", org_id: "k1_management",
+    status: "ready", total: 100000, match_required: "$25,000 cash match (25%)", updated: "2026-05-04T16:20:00Z",
+    lines: [
+      { cat: "Personnel",        amount: 42000, note: "Project lead + 0.5 FTE coordinator" },
+      { cat: "Fringe benefits",  amount: 9240,  note: "22% of personnel" },
+      { cat: "Equipment",        amount: 18000, note: "Field tablets, software licenses" },
+      { cat: "Travel",           amount: 4500,  note: "DE / PA site visits" },
+      { cat: "Contractual",      amount: 16000, note: "CPA audit + grant writer" },
+      { cat: "Indirect (10%)",   amount: 10260, note: "De minimis rate" },
+    ] },
+  { id: "bud2", grant_id: "g2", grant_name: "HRSA Health Center Program — SAC", org_id: "holigenix_healthcare",
+    status: "ready", total: 650000, match_required: "None (operating support)", updated: "2026-05-04T17:30:00Z",
+    lines: [
+      { cat: "Personnel",        amount: 380000, note: "Clinical + admin staff (6.5 FTE)" },
+      { cat: "Fringe benefits",  amount: 95000,  note: "25% of personnel" },
+      { cat: "Equipment",        amount: 42000,  note: "EVV hardware, telehealth carts" },
+      { cat: "Supplies",         amount: 28000,  note: "Medical + office" },
+      { cat: "Contractual",      amount: 45000,  note: "HHAeXchange integration support" },
+      { cat: "Indirect",         amount: 60000,  note: "Negotiated rate 10.2%" },
+    ] },
+  { id: "bud3", grant_id: "g3", grant_name: "MBDA Capital Readiness Program", org_id: "k1_management",
+    status: "drafting", total: 250000, match_required: "$50,000 in-kind", updated: "2026-05-04T15:10:00Z",
+    lines: [
+      { cat: "Personnel",        amount: 120000, note: "Capital readiness advisors" },
+      { cat: "Fringe benefits",  amount: 26400,  note: "22%" },
+      { cat: "Contractual",      amount: 70000,  note: "Financial modeling consultants" },
+      { cat: "Other direct",     amount: 12000,  note: "Convening + outreach" },
+      { cat: "Indirect (10%)",   amount: 21600,  note: "" },
+    ] },
+  { id: "bud4", grant_id: "g4", grant_name: "RWJF Pioneering Ideas Brief", org_id: "owner_nonprofit",
+    status: "ready", total: 50000, match_required: "None", updated: "2026-05-03T11:00:00Z",
+    lines: [
+      { cat: "Personnel",        amount: 30000, note: "PI 0.25 FTE" },
+      { cat: "Fringe benefits",  amount: 6600,  note: "22%" },
+      { cat: "Other direct",     amount: 9000,  note: "Pilot materials" },
+      { cat: "Indirect (10%)",   amount: 4400,  note: "" },
+    ] },
+];
+
 window.MOCK = { ORGS, GRANTS, DRAFTS, SESSIONS, ALERTS, VAULT, NOTES, CHAT_HISTORY, AGENT_ACTIVITY,
-                REQUIREMENTS, SOURCES, WATCHLISTS, DISMISSED, FUNDERS, SUBMISSIONS, AUDIT_LOG, TEMPLATES, ORG_TEAM, GRANT_META };
+                REQUIREMENTS, SOURCES, WATCHLISTS, DISMISSED, FUNDERS, SUBMISSIONS, AUDIT_LOG, TEMPLATES, ORG_TEAM, GRANT_META, BUDGETS };
