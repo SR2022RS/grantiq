@@ -20,6 +20,8 @@ function App() {
   const [dataReload, setDataReload] = useStateApp(0);
   const [dataStatus, setDataStatus] = useStateApp("mock"); // "mock" | "loading" | "live" | "error"
   const [showAddOrg, setShowAddOrg] = useStateApp(false);
+  const [bizOpen, setBizOpen]     = useStateApp(false);
+  const [query, setQuery]         = useStateApp("");
 
   // Bootstrap: on mount, fetch live data from Supabase + APIs and mutate
   // window.MOCK in place. Then bump dataReload to force a re-render so all
@@ -147,13 +149,58 @@ function App() {
         <div className="brand">
           <div className="brand-mark">G</div>
           <div>
-            <div className="brand-name">GrantIQ</div>
+            <div className="brand-name">Grant<span className="i">IQ</span></div>
             <div className="brand-sub">Command Center</div>
           </div>
         </div>
-        <div className="crumbs">
-          <span className="now">{pageTitle}</span>
+
+        <div className={"biz-switcher " + (bizOpen ? "open" : "")}>
+          <button className="biz-trigger" onClick={() => setBizOpen(o => !o)}>
+            <span className="swatch" style={activeOrg.id === "all" ? {background:"linear-gradient(135deg, oklch(0.78 0.13 195), oklch(0.78 0.16 38), oklch(0.78 0.13 290))"} : {background:`oklch(0.78 0.16 ${activeOrg.hue ?? 38})`}}>{activeOrg.letter}</span>
+            <span className="who">
+              <span className="l">Viewing</span>
+              <span className="n">{activeOrg.label}</span>
+            </span>
+            <span className="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6"/></svg></span>
+          </button>
+          {bizOpen && (
+            <React.Fragment>
+              <div onClick={() => setBizOpen(false)} style={{position:"fixed", inset:0, zIndex:55}} />
+              <div className="biz-menu">
+                <div className="mlabel">Switch business</div>
+                {orgs.map(o => {
+                  const c = orgCounts(o.id);
+                  const sw = o.id === "all"
+                    ? {background:"linear-gradient(135deg, oklch(0.78 0.13 195), oklch(0.78 0.16 38), oklch(0.78 0.13 290))"}
+                    : {background:`oklch(0.78 0.16 ${o.hue ?? 38})`};
+                  return (
+                    <button key={o.id} className={"biz-opt " + (orgFilter === o.id ? "active" : "")} onClick={() => { setOrgFilter(o.id); setBizOpen(false); }}>
+                      <span className="swatch" style={sw}>{o.letter}</span>
+                      <span className="who">
+                        <span className="n">{o.label}</span>
+                        <span className="s">{c.grants} active · {c.attention} need attention</span>
+                      </span>
+                      {orgFilter === o.id ? <span className="check">{I.check}</span> : <span className="cnt">{c.grants}</span>}
+                    </button>
+                  );
+                })}
+                <div className="mdivider" />
+                <button className="biz-opt add" onClick={() => { setBizOpen(false); setShowAddOrg(true); }}>
+                  <span className="swatch">+</span>
+                  <span className="who"><span className="n">Add business</span><span className="s">Onboard a new org</span></span>
+                  <span className="cnt">·</span>
+                </button>
+              </div>
+            </React.Fragment>
+          )}
         </div>
+
+        <div className="global-search">
+          {I.search}
+          <input placeholder="Search grants, funders, documents…" value={query} onChange={e => setQuery(e.target.value)} />
+          <span className="kbd">/</span>
+        </div>
+
         <div className="spacer" />
         <div className="theme-toggle" role="tablist" aria-label="Theme">
           <button className={tweaks.theme === "light" ? "active" : ""} onClick={() => setTweak("theme", "light")} title="Light">
@@ -185,31 +232,6 @@ function App() {
       </header>
 
       <aside className="sidebar">
-        <div className="org-picker">
-          <div className="label">Viewing</div>
-          {orgs.map((o, i) => {
-            const c = orgCounts(o.id);
-            const swatchStyle = o.id === "all"
-              ? null
-              : { background: `oklch(0.78 0.16 ${o.hue ?? 38})` };
-            return (
-              <button key={o.id} className={"org-pick " + (o.id === "all" ? "all " : "") + (orgFilter === o.id ? "active" : "")} onClick={() => setOrgFilter(o.id)}>
-                <span className="swatch" style={swatchStyle}>{o.letter}</span>
-                <span style={{textAlign:"left"}}>{o.short}</span>
-                <span className="count">{c.grants}</span>
-              </button>
-            );
-          })}
-          <button
-            className="org-pick org-add"
-            onClick={() => setShowAddOrg(true)}
-            title="Add a new business to GrantIQ"
-          >
-            <span className="swatch" style={{background:"var(--bg-2, #1c1f27)", border:"1px dashed var(--text-4, #6b7280)", color:"var(--text-3, #9ca3af)"}}>+</span>
-            <span style={{textAlign:"left", color:"var(--text-3, #9ca3af)"}}>Add business</span>
-            <span className="count" style={{visibility:"hidden"}}>0</span>
-          </button>
-        </div>
         <div className="nav-group">
           <div className="label">Operate</div>
           <NavItem id="inbox"    label="Inbox"    icon={I.inbox}    badge={counts.inbox}   page={page} onNav={onNav} accent />
