@@ -8,6 +8,7 @@
 // via its `save_grant` tool. The frontend's 30-second live-data refresh
 // surfaces new rows as they land.
 
+import { waitUntil } from '@vercel/functions';
 import { runGrantsTurn } from '../../src/agents/grants/index.js';
 import { getSupabase } from '../../src/lib/supabase.js';
 
@@ -43,23 +44,25 @@ export default async function handler(req, res) {
   }
 
   // Fire-and-forget: kick off each org's discovery turn in the background.
-  // Vercel Functions on Fluid Compute keep the runtime alive after we return,
-  // so unawaited promises continue to execute.
+  // waitUntil() registers each promise with Vercel's function lifecycle so the
+  // instance stays alive until the agent finishes — without this, Vercel kills
+  // the work the moment res.status(202).json(...) returns below, even on Fluid
+  // Compute. (Fluid Compute reuses instances ACROSS requests but doesn't extend
+  // a single request's lifetime; waitUntil is the sanctioned way to do that.)
   for (const orgId of orgIds) {
-    Promise.resolve()
-      .then(() =>
-        runGrantsTurn({
-          userMessage: DISCOVERY_PROMPT(orgId),
-          conversationId: null,
-          userChatId: `ondemand-discovery-${orgId}-${Date.now()}`,
-        })
-      )
-      .then((result) => {
-        console.log(`[discover] ${orgId} ok · iterations=${result?.telemetry?.iterations} · tools=${result?.telemetry?.tools_invoked?.length}`);
+    waitUntil(
+      runGrantsTurn({
+        userMessage: DISCOVERY_PROMPT(orgId),
+        conversationId: null,
+        userChatId: `ondemand-discovery-${orgId}-${Date.now()}`,
       })
-      .catch((e) => {
-        console.error(`[discover] ${orgId} failed:`, e.message);
-      });
+        .then((result) => {
+          console.log(`[discover] ${orgId} ok · iterations=${result?.telemetry?.iterations} · tools=${result?.telemetry?.tools_invoked?.length}`);
+        })
+        .catch((e) => {
+          console.error(`[discover] ${orgId} failed:`, e.message);
+        })
+    );
   }
 
   return res.status(202).json({
