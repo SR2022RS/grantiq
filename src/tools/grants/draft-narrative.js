@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '../../lib/supabase.js';
 import { MODEL } from '../../lib/constants.js';
+import { makeLLMClient, modelId } from '../../lib/llm-client.js';
 
 export const draftNarrativeSchema = {
   name: 'draft_narrative',
@@ -45,9 +45,9 @@ export async function draftNarrative({ grant_id, org_id, sections = DEFAULT_SECT
       ? 'Lead with COSTARS (March 2026 acceptance) for PA grants; Delaware OSD/SBF for DE grants; MWBE-NJ for NJ grants.'
       : '';
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = makeLLMClient();
   const response = await client.messages.create({
-    model: MODEL,
+    model: modelId(MODEL),
     max_tokens: 4096,
     system: `You are a senior grant writer. Output ONLY valid JSON: {"sections": {<section_name>: "<text>"}}. Each section is 200-500 words, professional voice, specific to the grant. ${phiRule} ${leadAngle} ${tone_notes || ''}`,
     messages: [{

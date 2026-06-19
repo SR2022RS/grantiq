@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '../../lib/supabase.js';
 import { MODEL } from '../../lib/constants.js';
+import { makeLLMClient, modelId } from '../../lib/llm-client.js';
 
 export const scoreGrantSchema = {
   name: 'score_grant',
@@ -24,9 +24,9 @@ export async function scoreGrant({ grant_id, org_id }) {
   if (!grant) return { ok: false, error: 'grant not found' };
   if (!org) return { ok: false, error: 'org not found' };
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = makeLLMClient();
   const response = await client.messages.create({
-    model: MODEL,
+    model: modelId(MODEL),
     max_tokens: 500,
     system: 'You are a grant eligibility analyst. Output ONLY a JSON object: {"score": <0-100>, "rationale": "<one sentence>"}.',
     messages: [{

@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '../../lib/supabase.js';
 import { MODEL } from '../../lib/constants.js';
+import { makeLLMClient, modelId } from '../../lib/llm-client.js';
 
 export const generateBudgetSchema = {
   name: 'generate_budget',
@@ -29,9 +29,9 @@ export async function generateBudget({ grant_id, org_id, amount, categories }) {
   ]);
   if (!grant || !org) return { ok: false, error: 'grant or org not found' };
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = makeLLMClient();
   const response = await client.messages.create({
-    model: MODEL,
+    model: modelId(MODEL),
     max_tokens: 2048,
     system: 'You are a grant budget specialist. Output ONLY valid JSON: {"line_items": [{"category": "<cat>", "description": "<desc>", "amount": <number>, "justification": "<one sentence>"}], "total": <number>, "indirect_rate": <number 0-1>}. Indirect rate ≤12% for federal. Sum of line_items.amount must equal total.',
     messages: [{

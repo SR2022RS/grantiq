@@ -5,6 +5,7 @@
 // Single entry point: createGrantIQClient({ apiKey, dispatch }).run({ system, messages, tools })
 
 import Anthropic from '@anthropic-ai/sdk';
+import { makeLLMClient, modelId } from './llm-client.js';
 import {
   MODEL,
   MAX_TOKENS,
@@ -30,13 +31,17 @@ async function callWithRetry(fn) {
   throw lastErr;
 }
 
-export function createGrantIQClient({ apiKey = process.env.ANTHROPIC_API_KEY, dispatch } = {}) {
-  if (!apiKey) throw new Error('[grantiq/client] ANTHROPIC_API_KEY missing');
+export function createGrantIQClient({ apiKey, dispatch } = {}) {
   if (typeof dispatch !== 'function') {
     throw new Error('[grantiq/client] dispatch(name, input) callback required');
   }
 
-  const client = new Anthropic({ apiKey, maxRetries: 0, timeout: 120_000 });
+  // Default: makeLLMClient routes via OpenRouter (preferred) or Anthropic-direct
+  // based on which env var is set. The explicit `apiKey` arg forces direct
+  // Anthropic — supported for tests and one-off overrides.
+  const client = apiKey
+    ? new Anthropic({ apiKey, maxRetries: 0, timeout: 120_000 })
+    : makeLLMClient();
 
   async function run({ system, messages, tools = [] }) {
     const startAll = Date.now();
@@ -59,7 +64,7 @@ export function createGrantIQClient({ apiKey = process.env.ANTHROPIC_API_KEY, di
 
       const response = await callWithRetry(() =>
         client.messages.create({
-          model: MODEL,
+          model: modelId(MODEL),
           max_tokens: MAX_TOKENS,
           system,
           tools,
