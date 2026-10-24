@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Clients — GrantIQ</title>
+<style>
+:root{--bg:#060b10;--surface:#0c1520;--surface2:#132030;--border:#1e3045;--text:#e8eef5;--text2:#8aa6c2;--text3:#5d7690;--accent:#22c55e;--red:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding:24px 16px 60px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+a{color:var(--text2)}
+h1{font-size:24px;margin:4px 0 2px}
+.lede{color:var(--text2);font-size:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:16px}
+form{display:flex;gap:8px;flex-wrap:wrap}
+input{flex:1;min-width:200px;min-height:46px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#04120a}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 0;border-top:1px solid var(--border)}
+.row:first-child{border-top:0}
+.nm{flex:1;min-width:180px}.nm b{display:block}.nm span{color:var(--text3);font-size:12.5px}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.acts .btn{min-height:38px;padding:7px 12px;font-size:13px}
+.new{margin-top:12px;font-family:ui-monospace,Menlo,monospace;font-size:13px;word-break:break-all;color:var(--accent);display:none}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(120px);background:#0f2a1a;border:1px solid var(--accent);padding:12px 18px;border-radius:12px;transition:transform .3s;max-width:92vw}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div class="lede">GrantIQ · Admin</div><a href="/portal">Back to portal</a></div>
+  <h1>Client upload links</h1>
+  <p class="lede">Create a client and hand them their private upload link. Each link only shows that client's checklist.</p>
+
+  <div class="card">
+    <form id="newForm">
+      <input id="clientName" placeholder="New client name (e.g. Mutual Care)" maxlength="120" required>
+      <button class="btn primary" type="submit">New client</button>
+    </form>
+    <div class="new" id="newLink"></div>
+  </div>
+
+  <div class="card" id="list"><div class="lede">Loading…</div></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.className='toast show';clearTimeout(t._h);t._h=setTimeout(()=>t.className='toast',3500);}
+async function copy(text){try{await navigator.clipboard.writeText(text);toast('Link copied');}catch{toast(text);}}
+async function load(){
+  const r = await fetch('/api/clients/list', { credentials: 'same-origin' });
+  if (r.status === 401) { location.href = '/login?next=/clients'; return; }
+  const j = await r.json();
+  document.getElementById('list').innerHTML = (j.clients || []).map(c => {
+    const full = c.link ? location.origin + c.link : '';
+    return '<div class="row"><div class="nm"><b>' + esc(c.name) + '</b><span>' + c.uploaded + ' of ' + c.total + ' documents uploaded</span></div><div class="acts">' +
+      (c.link ? '<a class="btn" href="' + esc(c.link) + '" target="_blank" rel="noopener">Open</a><button class="btn" data-copy="' + esc(full) + '">Copy link</button>'
+              : '<button class="btn" data-mk="' + esc(c.id) + '">Create link</button>') +
+      '<a class="btn" href="/upload.html?org=' + encodeURIComponent(c.id) + '">Admin view</a></div></div>';
+  }).join('') || '<div class="lede">No clients yet.</div>';
+}
+document.getElementById('list').addEventListener('click', async e => {
+  const c = e.target.closest('[data-copy]'); if (c) return copy(c.getAttribute('data-copy'));
+  const m = e.target.closest('[data-mk]'); if (!m) return;
+  const r = await fetch('/api/clients/create', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ org_id: m.getAttribute('data-mk') }) });
+  const j = await r.json(); if (!r.ok) return toast(j.error || 'Failed');
+  await load(); copy(location.origin + j.link);
+});
+document.getElementById('newForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = document.getElementById('clientName').value.trim(); if (!name) return;
+  const r = await fetch('/api/clients/create', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name }) });
+  const j = await r.json(); if (!r.ok) return toast(j.error || 'Failed');
+  const full = location.origin + j.link;
+  const n = document.getElementById('newLink'); n.style.display = 'block'; n.textContent = j.org.name + ': ' + full;
+  document.getElementById('clientName').value = '';
+  await load(); copy(full);
+});
+load();
+</script>
+</body>
+</html>

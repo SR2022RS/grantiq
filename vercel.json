@@ -4,17 +4,54 @@
   "framework": null,
   "outputDirectory": "public",
   "rewrites": [
-    {"source": "/k1-upload", "destination": "/k1-upload.html"},
-    {"source": "/k1", "destination": "/k1-upload.html"},
-    {"source": "/holigenix-upload", "destination": "/holigenix-upload.html"},
-    {"source": "/holigenix", "destination": "/holigenix-upload.html"},
-    {"source": "/portal", "destination": "/portal.html"},
-    {"source": "/app",    "destination": "/portal.html"},
-    {"source": "/login",  "destination": "/login.html"}
+    {
+      "source": "/u/:token",
+      "destination": "/upload.html"
+    },
+    {
+      "source": "/k1-upload",
+      "destination": "/upload.html"
+    },
+    {
+      "source": "/k1",
+      "destination": "/upload.html"
+    },
+    {
+      "source": "/holigenix-upload",
+      "destination": "/upload.html"
+    },
+    {
+      "source": "/holigenix",
+      "destination": "/upload.html"
+    },
+    {
+      "source": "/clients",
+      "destination": "/clients.html"
+    },
+    {
+      "source": "/portal",
+      "destination": "/portal.html"
+    },
+    {
+      "source": "/app",
+      "destination": "/portal.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/login.html"
+    }
   ],
   "redirects": [
-    {"source": "/landing",    "destination": "/", "permanent": false},
-    {"source": "/get-access", "destination": "/", "permanent": false}
+    {
+      "source": "/landing",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/get-access",
+      "destination": "/",
+      "permanent": false
+    }
   ],
   "functions": {
     "api/**/*.js": {
@@ -23,8 +60,32 @@
     }
   },
   "crons": [
-    {"path": "/api/cron/process-tasks",   "schedule": "* * * * *"},
-    {"path": "/api/cron/daily-discovery", "schedule": "0 12 * * *"},
-    {"path": "/api/cron/deadline-check",  "schedule": "0 */6 * * *"}
+    {
+      "path": "/api/cron/process-tasks",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/daily-discovery",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/deadline-check",
+      "schedule": "0 */6 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/u/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    }
   ]
 }

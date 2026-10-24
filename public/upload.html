@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Grant Document Upload</title>
+<style>
+:root{--bg:#060b10;--surface:#0c1520;--surface2:#132030;--border:#1e3045;--text:#e8eef5;--text2:#8aa6c2;--text3:#5d7690;--accent:#22c55e;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--blue:#3b82f6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:24px 16px calc(48px + env(safe-area-inset-bottom))}
+.brand{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:700}
+h1{font-size:24px;margin:6px 0 4px}
+.lede{color:var(--text2);font-size:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:18px}
+.bar{height:12px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.fill{height:100%;width:0;border-radius:99px;transition:width .5s ease,background .5s}
+.pct{font-size:28px;font-weight:800}
+.sub{color:var(--text2);font-size:13px}
+.admin{display:none;margin-top:14px;gap:8px;flex-wrap:wrap}
+.admin.on{display:flex}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:10px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#04120a}
+.btn.ghost{background:transparent}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.section h3{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin:26px 0 8px;display:flex;justify-content:space-between}
+.doc{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px}
+.doc.done{border-color:rgba(34,197,94,.35)}
+.icon{font-size:20px;width:28px;text-align:center;flex:none}
+.info{flex:1;min-width:0}
+.name{font-weight:600;font-size:15px}
+.desc{color:var(--text2);font-size:12.5px;margin-top:2px}
+.meta{color:var(--green);font-size:12px;margin-top:4px}
+.acts{display:flex;flex-direction:column;gap:6px;flex:none}
+.acts .btn{min-height:40px;padding:8px 14px;font-size:13px}
+@media (max-width:480px){.doc{flex-wrap:wrap}.acts{flex-direction:row;width:100%;justify-content:flex-end}}
+.msg{text-align:center;color:var(--text2);padding:40px 10px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(120px);background:#0f2a1a;border:1px solid var(--green);color:var(--text);padding:12px 18px;border-radius:12px;font-size:14px;transition:transform .3s;max-width:92vw;z-index:9}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.error{background:#2a0f12;border-color:var(--red)}
+.foot{margin-top:30px;text-align:center;color:var(--text3);font-size:12px}
+input[type=file]{display:none}
+.linkbox{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--text2);word-break:break-all;margin-top:10px;display:none}
+.linkbox.on{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">GrantIQ · Secure document upload</div>
+  <h1 id="orgName">Loading…</h1>
+  <p class="lede">Upload each document below. Files go to a private, encrypted vault — only your grant team can open them.</p>
+
+  <div class="card">
+    <div class="pct" id="pct">0%</div>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div class="sub" id="sub">0 of 0 documents uploaded</div>
+    <div class="admin" id="adminBar">
+      <a class="btn" id="zipBtn" href="#">Download all (ZIP)</a>
+      <button class="btn ghost" id="copyLink" type="button">Copy client link</button>
+    </div>
+    <div class="linkbox" id="linkBox"></div>
+  </div>
+
+  <div id="list"><div class="msg">Loading documents…</div></div>
+  <div class="foot">Powered by GrantIQ</div>
+</div>
+<div class="toast" id="toast"></div>
+<input type="file" id="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,image/*">
+
+<script>
+(function(){
+  const path = location.pathname;
+  const tokenMatch = path.match(/^\/u\/([A-Za-z0-9_-]{20,64})\/?$/);
+  const LEGACY = { '/holigenix': 'holigenix_healthcare', '/holigenix-upload': 'holigenix_healthcare', '/k1': 'k1_management', '/k1-upload': 'k1_management' };
+  const params = new URLSearchParams(location.search);
+  const TOKEN = tokenMatch ? tokenMatch[1] : null;
+  const ORG = TOKEN ? null : (LEGACY[path.replace(/\/$/, '')] || params.get('org'));
+  const scope = TOKEN ? 't=' + encodeURIComponent(TOKEN) : 'org=' + encodeURIComponent(ORG || '');
+  let state = { docs: [], admin: false, link: null, org: null };
+  let pending = null;
+
+  const GROUPS = {
+    all: 'Required for all grants', foundation: 'Foundation grants', federal: 'Federal grants',
+    state: 'State grants', healthcare: 'Healthcare grants'
+  };
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function toast(msg, err){ const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' error' : ''); clearTimeout(t._h); t._h = setTimeout(() => t.className = 'toast', 4000); }
+
+  async function load(){
+    if (!TOKEN && !ORG) { document.getElementById('list').innerHTML = '<div class="msg">This link is missing its access code.</div>'; document.getElementById('orgName').textContent = 'Upload link not valid'; return; }
+    const r = await fetch('/api/upload/checklist?' + scope, { credentials: 'same-origin' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      if (r.status === 401) { location.href = '/login?next=' + encodeURIComponent(location.pathname + location.search); return; }
+      document.getElementById('orgName').textContent = 'Upload link not valid';
+      document.getElementById('list').innerHTML = '<div class="msg">' + esc(j.error || 'This link is not valid.') + '</div>';
+      return;
+    }
+    state = j;
+    render();
+  }
+
+  function render(){
+    const docs = state.docs || [];
+    document.getElementById('orgName').textContent = state.org.name;
+    document.title = state.org.name + ' — Grant Document Upload';
+    const up = docs.filter(d => d.status === 'uploaded').length, total = docs.length;
+    const pct = total ? Math.round(up / total * 100) : 0;
+    const color = pct > 70 ? 'var(--green)' : pct > 40 ? 'var(--yellow)' : 'var(--red)';
+    const fill = document.getElementById('fill'); fill.style.width = pct + '%'; fill.style.background = color;
+    const pe = document.getElementById('pct'); pe.textContent = pct + '%'; pe.style.color = color;
+    document.getElementById('sub').textContent = up + ' of ' + total + ' documents uploaded';
+
+    if (state.admin) {
+      document.getElementById('adminBar').classList.add('on');
+      const z = document.getElementById('zipBtn');
+      z.href = '/api/zip?org=' + encodeURIComponent(state.org.id);
+      if (!docs.some(d => d.status === 'uploaded' && d.has_file)) z.setAttribute('disabled', ''); else z.removeAttribute('disabled');
+      const lb = document.getElementById('linkBox');
+      if (state.link) { lb.textContent = location.origin + state.link; lb.classList.add('on'); }
+      else document.getElementById('copyLink').textContent = 'Create client link';
+    }
+
+    const by = {};
+    docs.forEach(d => { (by[d.required_for] = by[d.required_for] || []).push(d); });
+    let html = '';
+    Object.keys(GROUPS).concat(Object.keys(by).filter(k => !GROUPS[k])).forEach(k => {
+      const list = by[k]; if (!list || !list.length) return;
+      const g = list.filter(d => d.status === 'uploaded').length;
+      html += '<div class="section"><h3><span>' + esc(GROUPS[k] || k) + '</span><span>' + g + '/' + list.length + '</span></h3>';
+      list.forEach(d => { html += row(d); });
+      html += '</div>';
+    });
+    document.getElementById('list').innerHTML = html || '<div class="msg">No documents on this checklist yet.</div>';
+  }
+
+  function row(d){
+    const done = d.status === 'uploaded';
+    const when = d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    let acts = '';
+    if (done && state.admin && d.has_file) {
+      acts += '<a class="btn" href="/api/file?doc_id=' + d.id + '" target="_blank" rel="noopener">View</a>';
+      acts += '<a class="btn" href="/api/file?doc_id=' + d.id + '&download=1">Download</a>';
+    }
+    acts += '<button class="btn ' + (done ? 'ghost' : 'primary') + '" data-up="' + d.id + '" type="button">' + (done ? 'Replace' : 'Upload') + '</button>';
+    return '<div class="doc ' + (done ? 'done' : '') + '" id="doc-' + d.id + '">' +
+      '<div class="icon">' + (done ? '✅' : '📄') + '</div>' +
+      '<div class="info"><div class="name">' + esc(d.doc_name) + '</div>' +
+      (d.description ? '<div class="desc">' + esc(d.description) + '</div>' : '') +
+      (done ? '<div class="meta">✓ Uploaded ' + esc(when) + (state.admin && d.file_name ? ' · ' + esc(d.file_name) : '') + '</div>' : '') +
+      '</div><div class="acts">' + acts + '</div></div>';
+  }
+
+  document.getElementById('list').addEventListener('click', e => {
+    const b = e.target.closest('[data-up]'); if (!b) return;
+    pending = b.getAttribute('data-up');
+    const f = document.getElementById('file'); f.value = ''; f.click();
+  });
+
+  document.getElementById('file').addEventListener('change', async e => {
+    const file = e.target.files && e.target.files[0]; const docId = pending; pending = null;
+    if (!file || !docId) return;
+    if (file.size > 25 * 1024 * 1024) { toast('That file is over 25 MB.', true); return; }
+    const btn = document.querySelector('[data-up="' + docId + '"]');
+    if (btn) { btn.textContent = 'Uploading…'; btn.disabled = true; }
+    try {
+      const q = scope + '&doc_id=' + encodeURIComponent(docId) + '&filename=' + encodeURIComponent(file.name) +
+        '&mime_type=' + encodeURIComponent(file.type || '') + '&size=' + file.size;
+      const s = await fetch('/api/upload/sign?' + q, { method: 'POST', credentials: 'same-origin' });
+      const sj = await s.json().catch(() => ({}));
+      if (!s.ok) throw new Error(sj.error || 'could not start upload');
+      const put = await fetch(sj.upload_url, { method: 'PUT', headers: { 'Content-Type': sj.mime_type, 'x-upsert': 'false' }, body: file });
+      if (!put.ok) throw new Error('storage refused the file (' + put.status + ')');
+      const c = await fetch('/api/upload/complete?' + scope, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ doc_id: docId, path: sj.path, mime_type: sj.mime_type }) });
+      const cj = await c.json().catch(() => ({}));
+      if (!c.ok) throw new Error(cj.error || 'could not save');
+      toast('✅ “' + file.name + '” uploaded');
+      await load();
+    } catch (err) {
+      toast('Upload failed — ' + err.message, true);
+      if (btn) { btn.textContent = 'Try again'; btn.disabled = false; }
+    }
+  });
+
+  document.getElementById('copyLink').addEventListener('click', async () => {
+    let link = state.link;
+    if (!link) {
+      const r = await fetch('/api/clients/create', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: state.org.id }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(j.error || 'Could not create link', true); return; }
+      link = j.link; await load();
+    }
+    const full = location.origin + link;
+    try { await navigator.clipboard.writeText(full); toast('Client link copied'); } catch { toast(full); }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

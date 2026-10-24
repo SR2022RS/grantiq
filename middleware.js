@@ -18,15 +18,16 @@ const PUBLIC_PATHS = new Set([
   '/', '/index.html',
   '/login', '/login.html',
   '/landing', '/get-access',                                  // legacy redirects
-  '/k1', '/k1-upload', '/k1-upload.html',                     // public client upload pages
-  '/holigenix', '/holigenix-upload', '/holigenix-upload.html',
+  '/upload.html',                                              // client upload page (data needs a /u/<token> link)
   '/index-legacy.html',
   '/api/auth/login', '/api/auth/logout',
   '/api/leads/submit',                                         // public sales-page submit
   '/api/health',
   '/favicon.ico', '/robots.txt',
 ]);
-const PUBLIC_PREFIXES = ['/api/cron/', '/_vercel/'];
+// /u/<token>: per-client upload links. /api/upload/*: token-checked inside each route.
+// /holigenix and /k1 are now ADMIN views (login required); clients use /u/<token>.
+const PUBLIC_PREFIXES = ['/api/cron/', '/_vercel/', '/u/', '/api/upload/'];
 
 export const config = {
   matcher: '/((?!_vercel/|favicon\\.ico).*)',
