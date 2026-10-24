@@ -5,16 +5,12 @@
 // mutate window.MOCK in place, then trigger a re-render. Mocked tables that
 // don't yet have backing DB tables (FUNDERS, WATCHLISTS, etc.) stay as-is.
 //
-// Public anon key is safe in browser — it's the same one already used by
-// /k1-upload.html and /holigenix-upload.html. Service-role operations go
-// through /api/* endpoints (server-side).
-
-const SB_URL = 'https://zamokpkpneedvluthsem.supabase.co';
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbW9rcGtwbmVlZHZsdXRoc2VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODM2OTEsImV4cCI6MjA5MTE1OTY5MX0.dLRU-LFZe_1q5383OVYMjpVX2bhbHHwco90kzY8MqI4';
+// All table reads go through /api/data (login-gated, service role server-side).
+// Row-level security is on, so the browser anon key can no longer read tables.
 
 async function sbGet(table, query = '') {
-  const url = `${SB_URL}/rest/v1/${table}${query}`;
-  const r = await fetch(url, { headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON } });
+  const qs = query.startsWith('?') ? query.slice(1) : query;
+  const r = await fetch(`/api/data?table=${encodeURIComponent(table)}${qs ? '&' + qs : ''}`, { credentials: 'same-origin' });
   if (!r.ok) throw new Error(`Supabase ${table}: HTTP ${r.status}`);
   return r.json();
 }
