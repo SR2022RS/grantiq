@@ -144,6 +144,7 @@ input[type=file]{display:none}
     if (done && state.admin && d.has_file) {
       acts += '<a class="btn" href="/api/file?doc_id=' + d.id + '" target="_blank" rel="noopener">View</a>';
       acts += '<a class="btn" href="/api/file?doc_id=' + d.id + '&download=1">Download</a>';
+      if (d.can_remove) acts += '<button class="btn ghost" data-rm="' + d.id + '" type="button">Remove</button>';
     }
     acts += '<button class="btn ' + (done ? 'ghost' : 'primary') + '" data-up="' + d.id + '" type="button">' + (done ? 'Replace' : 'Upload') + '</button>';
     return '<div class="doc ' + (done ? 'done' : '') + '" id="doc-' + d.id + '">' +
@@ -154,7 +155,15 @@ input[type=file]{display:none}
       '</div><div class="acts">' + acts + '</div></div>';
   }
 
-  document.getElementById('list').addEventListener('click', e => {
+  document.getElementById('list').addEventListener('click', async e => {
+    const rm = e.target.closest('[data-rm]');
+    if (rm) {
+      if (!confirm('Remove this uploaded file? The item goes back to missing.')) return;
+      const r = await fetch('/api/clients/clear-doc', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ doc_id: rm.getAttribute('data-rm') }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) toast(j.error || 'Could not remove', true); else { toast('File removed'); await load(); }
+      return;
+    }
     const b = e.target.closest('[data-up]'); if (!b) return;
     pending = b.getAttribute('data-up');
     const f = document.getElementById('file'); f.value = ''; f.click();

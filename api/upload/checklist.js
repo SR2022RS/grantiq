@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       required_for: r.required_for || 'all', status: r.status, uploaded_at: r.uploaded_at,
       has_file: !!(r.storage_path || r.file_url),
     };
-    if (admin) d.file_name = fileNameOf(r);
+    if (admin) { d.file_name = fileNameOf(r); d.can_remove = !!r.storage_path; }
     return d;
   });
   return res.status(200).json({ ok: true, admin, org: { id: org.id, name: org.name }, link, docs });
