@@ -43,7 +43,8 @@ export function createGrantIQClient({ apiKey, dispatch } = {}) {
     ? new Anthropic({ apiKey, maxRetries: 0, timeout: 120_000 })
     : makeLLMClient();
 
-  async function run({ system, messages, tools = [] }) {
+  async function run({ system, messages, tools = [], maxIterations }) {
+    const iterCap = Number.isInteger(maxIterations) && maxIterations > 0 ? maxIterations : MAX_TOOL_ITERATIONS;
     const startAll = Date.now();
     const telemetry = {
       iterations: 0,
@@ -59,7 +60,7 @@ export function createGrantIQClient({ apiKey, dispatch } = {}) {
     let finalText = '';
     let lastStopReason = null;
 
-    for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
+    for (let iter = 0; iter < iterCap; iter++) {
       telemetry.iterations = iter + 1;
 
       const response = await callWithRetry(() =>
