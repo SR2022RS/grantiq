@@ -43,7 +43,7 @@ export function createGrantIQClient({ apiKey, dispatch } = {}) {
     ? new Anthropic({ apiKey, maxRetries: 0, timeout: 120_000 })
     : makeLLMClient();
 
-  async function run({ system, messages, tools = [], maxIterations }) {
+  async function run({ system, messages, tools = [], maxIterations, wrapUp }) {
     const iterCap = Number.isInteger(maxIterations) && maxIterations > 0 ? maxIterations : MAX_TOOL_ITERATIONS;
     const startAll = Date.now();
     const telemetry = {
@@ -124,6 +124,13 @@ export function createGrantIQClient({ apiKey, dispatch } = {}) {
           };
         })
       );
+
+      // Optional wrap-up nudge: a few iterations before the cap, tell the model
+      // to stop researching and act (e.g. save what it found), so long research
+      // turns don't end at the cap with nothing written.
+      if (wrapUp?.text && wrapUp.atIteration && iter + 1 === wrapUp.atIteration) {
+        toolResults.push({ type: 'text', text: wrapUp.text });
+      }
 
       workingMessages.push({ role: 'user', content: toolResults });
     }
