@@ -43,15 +43,14 @@ async function logRun(supabase, row) {
 export async function runOrgDiscovery(orgId) {
   const supabase = getSupabase();
   const startedAt = new Date();
-  const day = startedAt.toISOString().slice(0, 10);
   let status = 'failed';
   let metadata = {};
   try {
     const result = await runGrantsTurn({
       userMessage: DISCOVERY_PROMPT(orgId),
       conversationId: null,
-      // one fresh thread per org per day, so history doesn't pile up run after run
-      userChatId: `cron-discovery-${orgId}-${day}`,
+      // one fresh thread per run, so history doesn't pile up run after run
+      userChatId: `cron-discovery-${orgId}-${startedAt.toISOString()}`,
       maxIterations: DISCOVERY_MAX_ITERATIONS,
       wrapUp: {
         atIteration: Math.max(1, DISCOVERY_MAX_ITERATIONS - 5),
