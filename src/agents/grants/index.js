@@ -21,7 +21,7 @@ function extractKeywords(text) {
     .slice(0, 10);
 }
 
-export async function runGrantsTurn({ userMessage, conversationId, userChatId, maxIterations, wrapUp }) {
+export async function runGrantsTurn({ userMessage, conversationId, userChatId, maxIterations, wrapUp, stopAfterMs }) {
   // Load or create conversation
   let conversation;
   let priorMessages;
@@ -56,6 +56,7 @@ export async function runGrantsTurn({ userMessage, conversationId, userChatId, m
     tools: GRANTS_TOOL_SCHEMAS,
     maxIterations,
     wrapUp,
+    stopAfterMs,
   });
 
   // Persist all new turns (user message + assistant response + any tool turns)
