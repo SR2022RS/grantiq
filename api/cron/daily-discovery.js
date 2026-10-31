@@ -15,12 +15,14 @@ import { waitUntil } from '@vercel/functions';
 import { runGrantsTurn } from '../../src/agents/grants/index.js';
 import { getSupabase } from '../../src/lib/supabase.js';
 
-const DISCOVERY_MAX_ITERATIONS = parseInt(process.env.GRANTIQ_DISCOVERY_MAX_ITERATIONS || '14', 10);
+const DISCOVERY_MAX_ITERATIONS = parseInt(process.env.GRANTIQ_DISCOVERY_MAX_ITERATIONS || '20', 10);
 
 const DISCOVERY_PROMPT = (orgId) =>
   `Daily discovery scan for ${orgId}.
 
 Search the web for new grants matching this org's profile. Use the org's certifications, regions, NAICS codes, and mission as your search terms. Save promising ones to the pipeline with status='new' via save_grant. Score each via score_grant.
+
+Work budget (this run has a hard time limit): do at most 2 rounds of web_search, open only the most promising pages (about 8), and call save_grant for each confirmed fit as soon as you have its funder, deadline and eligibility, before researching the next one. Skip grants that are already in the pipeline. Saving real matches matters more than exhaustive research.
 
 Apply the geographic eligibility rules from your hard rules — do not save state-specific grants outside the org's operating geography.
 
@@ -51,6 +53,10 @@ export async function runOrgDiscovery(orgId) {
       // one fresh thread per org per day, so history doesn't pile up run after run
       userChatId: `cron-discovery-${orgId}-${day}`,
       maxIterations: DISCOVERY_MAX_ITERATIONS,
+      wrapUp: {
+        atIteration: Math.max(1, DISCOVERY_MAX_ITERATIONS - 5),
+        text: 'Time is almost up. Stop searching and fetching now. Call save_grant (then score_grant) for every qualifying grant you found that is not already in the pipeline, then give the summary.',
+      },
     });
     status = result.status === 'success' ? 'completed' : (result.status || 'partial');
     metadata = {
