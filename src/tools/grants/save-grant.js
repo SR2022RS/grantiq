@@ -74,6 +74,12 @@ export async function saveGrant(input) {
     return { ok: true, grant_id: existing.id, updated: true };
   }
 
+  // Don't add grants whose deadline has already passed.
+  const today = new Date().toISOString().slice(0, 10);
+  if (clean.deadline && clean.deadline < today) {
+    return { ok: false, error: `not saved: deadline ${clean.deadline} has already passed (today is ${today})` };
+  }
+
   const status = STATUSES.has(input.status) ? input.status : 'new';
   const { data, error } = await supabase
     .from('grant_opportunities')
