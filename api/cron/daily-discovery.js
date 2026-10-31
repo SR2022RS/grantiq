@@ -54,8 +54,10 @@ export async function runOrgDiscovery(orgId) {
       // one fresh thread per run, so history doesn't pile up run after run
       userChatId: `cron-discovery-${orgId}-${startedAt.toISOString()}`,
       maxIterations: DISCOVERY_MAX_ITERATIONS,
+      stopAfterMs: 230_000, // function limit is 300 s; leave room to log the run
       wrapUp: {
         atIteration: Math.max(1, DISCOVERY_MAX_ITERATIONS - 5),
+        afterMs: 160_000, // or after ~2.7 min, whichever comes first
         text: 'Time is almost up. Stop searching and fetching now. Call save_grant (then score_grant) for every qualifying grant you found that is not already in the pipeline, then give the summary.',
       },
     });

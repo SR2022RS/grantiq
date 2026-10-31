@@ -43,7 +43,8 @@ export function createGrantIQClient({ apiKey, dispatch } = {}) {
     ? new Anthropic({ apiKey, maxRetries: 0, timeout: 120_000 })
     : makeLLMClient();
 
-  async function run({ system, messages, tools = [], maxIterations, wrapUp }) {
+  async function run({ system, messages, tools = [], maxIterations, wrapUp, stopAfterMs }) {
+    let nudged = false;
     const iterCap = Number.isInteger(maxIterations) && maxIterations > 0 ? maxIterations : MAX_TOOL_ITERATIONS;
     const startAll = Date.now();
     const telemetry = {
@@ -61,6 +62,9 @@ export function createGrantIQClient({ apiKey, dispatch } = {}) {
     let lastStopReason = null;
 
     for (let iter = 0; iter < iterCap; iter++) {
+      // Hard time budget: stop before the platform kills the function, so the
+      // caller still gets to record the run.
+      if (stopAfterMs && Date.now() - startAll > stopAfterMs) break;
       telemetry.iterations = iter + 1;
 
       const response = await callWithRetry(() =>
@@ -128,8 +132,10 @@ export function createGrantIQClient({ apiKey, dispatch } = {}) {
       // Optional wrap-up nudge: a few iterations before the cap, tell the model
       // to stop researching and act (e.g. save what it found), so long research
       // turns don't end at the cap with nothing written.
-      if (wrapUp?.text && wrapUp.atIteration && iter + 1 === wrapUp.atIteration) {
+      const late = wrapUp?.afterMs && Date.now() - startAll > wrapUp.afterMs;
+      if (wrapUp?.text && !nudged && ((wrapUp.atIteration && iter + 1 >= wrapUp.atIteration) || late)) {
         toolResults.push({ type: 'text', text: wrapUp.text });
+        nudged = true;
       }
 
       workingMessages.push({ role: 'user', content: toolResults });
@@ -137,7 +143,7 @@ export function createGrantIQClient({ apiKey, dispatch } = {}) {
 
     telemetry.latency_ms = Date.now() - startAll;
     return {
-      text: finalText || '(reached max tool iterations without a final answer)',
+      text: finalText || '(reached the step or time limit without a final answer)',
       messages: workingMessages,
       stop_reason: 'max_iterations',
       telemetry,
