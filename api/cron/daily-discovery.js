@@ -18,7 +18,9 @@ import { getSupabase } from '../../src/lib/supabase.js';
 const DISCOVERY_MAX_ITERATIONS = parseInt(process.env.GRANTIQ_DISCOVERY_MAX_ITERATIONS || '20', 10);
 
 const DISCOVERY_PROMPT = (orgId) =>
-  `Daily discovery scan for ${orgId}.
+  `Daily discovery scan for ${orgId}. Today is ${new Date().toISOString().slice(0, 10)}.
+
+Only save grants that are open now: the application deadline must be after today (or explicitly rolling). Skip past cycles even if a page still lists them.
 
 Search the web for new grants matching this org's profile. Use the org's certifications, regions, NAICS codes, and mission as your search terms. Save promising ones to the pipeline with status='new' via save_grant. Score each via score_grant.
 
